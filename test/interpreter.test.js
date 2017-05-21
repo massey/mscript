@@ -31,13 +31,25 @@ describe('interpreter state and methods', () => {
 })
 
 /* Here we instatiate with a simple AST and run compile. Check the output
- * the output against the expected AST. */
+ * against the expected AST. */
 
 const simpleInput = fs.readFileSync(path.resolve(__dirname, 'param.js'), 'utf-8')
 const simpleAST   = parse(simpleInput)
+const command     = simpleAST.body[0]
+console.log(command)
 
 const ii          = new Interpreter(simpleAST)
 const output      = ii.compile()
+
+describe('new interpreter with simple AST - input AST', () => {
+  test('list options in command statement with getOptions()', () => {
+    let options = ii.getOptions(command)
+    expect(options instanceof Array).toBe(true)
+    expect(options.length).toBe(2)
+    expect(options[0].type).toBe('LabeledStatement')
+    expect(options[1].type).toBe('LabeledStatement')
+  })
+})
 
 describe('new interpreter with simple AST', () => {
   test('output AST should have type \'Program\'', () => {

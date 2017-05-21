@@ -63,6 +63,14 @@ export default class Interpreter {
     return this.stack[this.stack.length - 1]
   }
 
+  getOptions (command: node): Array<node> {
+    let body: node = command.body.body
+
+    return body.filter((option: node) => {
+      return option.type === 'LabeledStatement'
+    })
+  }
+
   openScope (context: string) {
     this.context.push(context)
     this.stack.push([])

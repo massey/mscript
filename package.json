@@ -1,7 +1,7 @@
 {
   "name": "interpreter",
   "version": "1.0.0",
-  "description": "",
+  "description": "MScript parser and compiler.",
   "main": "dist/interpreter.js",
   "scripts": {
     "build": "tsc",
