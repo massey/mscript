@@ -2,13 +2,35 @@
   "name": "interpreter",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "dist/interpreter.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc",
+    "test": "jest"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "acorn": "git+https://github.com/massey/acorn.git"
+  },
+  "devDependencies": {
+    "jest": "^20.0.3",
+    "ts-jest": "^20.0.4",
+    "typescript": "^2.3.2"
+  },
+  "jest": {
+    "globals": {
+      "__TS_CONFIG__": "tsconfig.json"
+    },
+    "moduleFileExtensions": [
+      "ts",
+      "js"
+    ],
+    "transform": {
+      "^.+\\.(ts)$": "./node_modules/ts-jest/preprocessor.js"
+    },
+    "testMatch": [
+      "**/test/**/*.test.(ts|js)"
+    ],
+    "testEnvironment": "node"
   }
 }

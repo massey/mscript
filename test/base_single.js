@@ -88,7 +88,7 @@ component stretcher {
 }
 
 component shelf {
-  A: back.A
+  A: back.Aº
   B: depth - benchtopOverhang - faceMaterial.thickness - 20
   material: '01.005'
 }
