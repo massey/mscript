@@ -107,7 +107,6 @@ export default class Interpreter {
   }
 
   startNode (type: string): node {
-
-    return
+    return { type }
   }
 }
