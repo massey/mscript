@@ -1,21 +1,16 @@
-interface inputAst {
-  type: string
-  body: Array<object>;
-}
-
-interface node {
-  type: string
-  [propName: string]: any;
-}
+import Node from './node'
 
 export default class Interpreter {
-  input: inputAst
+  input: Node
+  inputPos: number
+  inputNode: Node
   data:  object
-  context: Array<string>
+  context: Array<Node>
   stack: Array<Array<object>>
 
-  constructor (ast: inputAst, data: object) {
+  constructor (ast: Node, data?: object) {
     this.input = ast
+    this.inputPos = 0
     this.data  = data
 
     /* Keeps track of what command we're inside of. */
@@ -25,32 +20,33 @@ export default class Interpreter {
     this.stack = []
   }
 
-  compile () {
-    this.openScope('topLevel')
+  compile (): Node {
+    this.inputNode = this.input.body[this.inputPos]
 
-    let node = this.startNode('Program')
+    let node: Node = Node.program()
 
-    node.body = []
+    this.openScope(node)
 
-    this.input.body.forEach((msNode: node) => {
-      node.body.push(this.compileNode(msNode))
+    this.input.body.forEach((inputNode: Node) => {
+      node.body.push(this.compileNode(inputNode))
     })
 
     return node
   }
 
-  compileNode (msNode: node) {
+  compileNode (inputNode: Node) {
 
-    switch (msNode.type) {
-      case 'CommandStatement': return this.commandStatement(msNode)
+    switch (inputNode.type) {
+      case 'CommandStatement': return this.commandStatement(inputNode)
       default:
     }
   }
 
-  commandStatement (msNode: node) {
+  commandStatement (command: Node) {
+    let details = Interpreter.analyzeCommand(command)
 
-    switch (msNode.name.name) {
-      case 'param': return this.param(msNode)
+    switch (details.name) {
+      case 'param': return this.param(command, details)
       default:
     }
   }
@@ -63,15 +59,20 @@ export default class Interpreter {
     return this.stack[this.stack.length - 1]
   }
 
-  getOptions (command: node): Array<node> {
-    let body: node = command.body.body
+  getOptions (command: Node): Array<Node> {
+    let body: Node = command.body.body
 
-    return body.filter((option: node) => {
+    return body.filter((option: Node) => {
       return option.type === 'LabeledStatement'
     })
   }
 
-  openScope (context: string) {
+  next (): void {
+    this.inputPos++
+    this.inputNode = this.input[this.inputPos]
+  }
+
+  openScope (context: Node) {
     this.context.push(context)
     this.stack.push([])
   }
@@ -81,40 +82,53 @@ export default class Interpreter {
     this.stack.pop()
   }
 
-  identifier (name: string, _instanceof?: string): node {
-    let id = {
-      type:'Identifier',
-      name,
-      _instanceof
-    }
-
+  addIdtoCurrentScope (id: Node): void {
     this.getCurrentScope().push(id)
-
-    return id
   }
 
-  param (msNode: node) {
-    this.openScope('param')
+  param (command: Node, details: {id: string, options: Array<Node> }): Node {
+    this.openScope(command)
 
-    let node = this.startNode('VariableDeclaration')
-
-    node.declarations = []
-
-    let declarator = this.startNode('VariableDeclarator')
-    declarator.id = this.identifier(msNode.id.name, 'param')
-    let init = declarator.init = this.startNode('CallExpression')
-    init.callee = this.identifier('param')
-    init.arguments = []
-
-    let options = this.startNode('ObjectExpression')
-    options.properties = []
+    let properties = Interpreter.convertOptions(details.options)
+    let optionsObject: Node = Node.objectExpression(properties)
+    let call: Node = Node.callExpression('param', [optionsObject])
+    let declarator = Node.variableDeclarator(details.id, call)
+    let node: Node = Node.variableDeclaration('var', [declarator])
 
     this.closeScope()
 
     return node
   }
 
-  startNode (type: string): node {
-    return { type }
+  /* Static methods */
+  static analyzeCommand (command: Node): {name: string, id: string, options: Array<Node>} {
+    let name: string = command.name.name
+    let id: string   = command.id.name
+    let options: Array<Node> = command.body.body.filter((node: Node) => {
+      return node.type === 'LabeledStatement'
+    })
+
+    return {
+      name,
+      id,
+      options
+    }
+  }
+
+  static convertOptions (options: Array<Node>): Array<Node> {
+    let nodes: Array<Node> = []
+
+    options.forEach((option: Node) => {
+      nodes.push(Interpreter.convertLabeledStatementToProperty(option))
+    })
+
+    return nodes
+  }
+
+  static convertLabeledStatementToProperty (labeledStatement: Node): Node {
+    let key   = labeledStatement.label.name
+    let value = labeledStatement.body
+
+    return Node.property(key, value)
   }
 }
