@@ -1,6 +1,7 @@
 const path        = require('path')
 const fs          = require('fs')
 const Interpreter = require('../dist/interpreter.js').default
+const Node        = require('../dist/node.js').default
 const parse       = require('acorn').parse
 
 /* Here we instantiate a new Interpreter and check it's initial state, run a
@@ -22,6 +23,17 @@ describe('interpreter state and some member methods', () => {
 
   test('stack.length should be 1', () => {
     expect(i.stack.length).toBe(1);
+  })
+})
+
+describe('interpreter static methods', () => {
+  test('makeIdentifierGettable', () => {
+    let id = Node.identifier('test')
+    let gettable = Interpreter.makeIdentifierGettable(id)
+
+    expect(gettable.type).toBe('CallExpression')
+    expect(gettable.callee.type).toBe('MemberExpression')
+    expect(gettable.callee.property.name).toBe('get')
   })
 })
 
@@ -97,39 +109,21 @@ describe('new interpreter with simple AST', () => {
   let oe = ce.arguments[0]
 
   test('ObjectExpression should have two properties', () => {
-    expect(oe.properties.length).toBe(2)
+    expect(oe.properties.length).toBe(3)
     expect(oe.properties[0].type).toBe('Property')
     expect(oe.properties[1].type).toBe('Property')
+    expect(oe.properties[2].type).toBe('Property')
   })
 
-  test('first ObjectExpression property should have key \'type\' and be an ExpressionStatement', () => {
+  test('first ObjectExpression property should have key \'type\' and be a string literal', () => {
     expect(oe.properties[0].key.name).toBe('type')
-    expect(oe.properties[0].value.type).toBe('ExpressionStatement')
+    expect(oe.properties[0].value.type).toBe('Literal')
+    expect(oe.properties[0].value.value).toBe('string')
   })
 
-  test('second ObjectExpression property should have key \'value \' and be an ExpressionStatement', () => {
+  test('second ObjectExpression property should have key \'value \' and be a number literal', () => {
     expect(oe.properties[1].key.name).toBe('value')
-    expect(oe.properties[1].value.type).toBe('ExpressionStatement')
-  })
-
-  let es = oe.properties[0].value
-  let ess = oe.properties[1].value
-
-  test('ExpressionStatements should have expressions', () => {
-    expect(es.expression).toBeTruthy()
-    expect(ess.expression).toBeTruthy()
-  })
-
-  let ex = es.expression
-  let exx = ess.expression
-
-  test('expressions should be Literals', () => {
-    expect(ex.type).toBe('Literal')
-    expect(exx.type).toBe('Literal')
-  })
-
-  test('Literal values should be \'string\' and 1000', () => {
-    expect(ex.value).toBe('string')
-    expect(exx.value).toBe(1000)
+    expect(oe.properties[1].value.type).toBe('Literal')
+    expect(oe.properties[1].value.value).toBe(1000)
   })
 })

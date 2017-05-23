@@ -1,5 +1,15 @@
 const Node = require('../dist/node.js').default
 
+test('make an arrowFunctionExpression', () => {
+  let params = []
+  let body   = Node.identifier('test')
+  let a = Node.arrowFunctionExpression(params, body)
+
+  expect(a.type).toBe('ArrowFunctionExpression')
+  expect(a.body.type).toBe('Identifier')
+  expect(a.params.length).toBe(0)
+})
+
 test('make a CallExpression', () => {
   let a  = Node.identifier('test')
   let ce = Node.callExpression('test', [a])
@@ -23,7 +33,6 @@ test('make a Literal', () => {
 
   expect(l instanceof Node).toBe(true)
   expect(l.value).toBe(1)
-  expect(l.raw).toBe('1')
 })
 
 test('make an ObjectExpression', () => {
@@ -68,7 +77,8 @@ test('make a VariableDeclaration', () => {
 
 test('make a VariableDeclarator', () => {
   let init = Node.identifier('test')
-  let vd   = Node.variableDeclarator('test', init)
+  let initt = Node.identifier('test')
+  let vd   = Node.variableDeclarator(init, initt)
 
   expect(vd instanceof Node).toBe(true)
   expect(vd.id instanceof Node).toBe(true)

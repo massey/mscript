@@ -46,9 +46,26 @@ export default class Interpreter {
     let details = Interpreter.analyzeCommand(command)
 
     switch (details.name) {
+      case 'component': return this.component(command, details)
       case 'param': return this.param(command, details)
       default:
     }
+  }
+
+  component (command: Node, details: {id: string, options: Array<Node> }): Node {
+    this.openScope(command)
+
+    let properties: Array<Node> = Interpreter.convertOptions(details.options)
+    properties.push(Node.property('name', Node.literal(details.id)))
+    let optionsObject: Node = Node.objectExpression(properties)
+    let call: Node = Node.callExpression('component', [optionsObject])
+    let id: Node   = Node.identifier(details.id)
+    let declarator = Node.variableDeclarator(id, call)
+    let node: Node = Node.variableDeclaration('var', [declarator])
+
+    this.closeScope()
+
+    return node
   }
 
   getCurrentContext () {
@@ -65,11 +82,6 @@ export default class Interpreter {
     return body.filter((option: Node) => {
       return option.type === 'LabeledStatement'
     })
-  }
-
-  next (): void {
-    this.inputPos++
-    this.inputNode = this.input[this.inputPos]
   }
 
   openScope (context: Node) {
@@ -89,10 +101,12 @@ export default class Interpreter {
   param (command: Node, details: {id: string, options: Array<Node> }): Node {
     this.openScope(command)
 
-    let properties = Interpreter.convertOptions(details.options)
+    let properties: Array<Node> = Interpreter.convertOptions(details.options)
+    properties.push(Node.property('name', Node.literal(details.id)))
     let optionsObject: Node = Node.objectExpression(properties)
     let call: Node = Node.callExpression('param', [optionsObject])
-    let declarator = Node.variableDeclarator(details.id, call)
+    let id: Node   = Node.identifier(details.id)
+    let declarator = Node.variableDeclarator(id, call)
     let node: Node = Node.variableDeclaration('var', [declarator])
 
     this.closeScope()
@@ -115,6 +129,9 @@ export default class Interpreter {
     }
   }
 
+  /**
+   * Convert an array of LabeledStatements into Properties
+   */
   static convertOptions (options: Array<Node>): Array<Node> {
     let nodes: Array<Node> = []
 
@@ -127,8 +144,24 @@ export default class Interpreter {
 
   static convertLabeledStatementToProperty (labeledStatement: Node): Node {
     let key   = labeledStatement.label.name
-    let value = labeledStatement.body
+    let value = labeledStatement.body.expression
+
+    if (value.type !== 'Literal') {
+      value = Node.arrowFunctionExpression([], value)
+    }
 
     return Node.property(key, value)
+  }
+
+  static makeExpressionGettable () {
+
+  }
+
+  static makeIdentifierGettable (id: Node): Node {
+    let prop = Node.identifier('get')
+    let me = Node.memberExpression(id, prop)
+    let node: Node = Node.callExpression(me)
+
+    return node
   }
 }

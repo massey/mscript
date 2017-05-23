@@ -1,7 +1,5 @@
 export default class Node {
   type: string
-  body?: any
-  arguments?: Array<Node>
   [propName: string]: any
 
    constructor (type: string) {
@@ -9,9 +7,37 @@ export default class Node {
    }
 
    /* Node factory methods. */
-   static callExpression (callee: string, args: Array<Node>): Node {
+   static arrowFunctionExpression (params: Array<Node>, body: Node): Node {
+     let node: Node = new Node('ArrowFunctionExpression')
+
+     node.params     = params
+     node.body       = body
+     node.id         = null
+     node.generator  = false
+     node.expression = true
+
+     return node
+   }
+
+   static binaryExpression (left: Node, operator: string, right: Node): Node {
+     let node: Node = new Node('BinaryExpression')
+
+     node.left     = left
+     node.operator = operator
+     node.right    = right
+
+     return node
+   }
+
+   static callExpression (callee: any, args?: Array<Node>): Node {
      let node = new Node('CallExpression')
-     node.callee = Node.identifier(callee)
+
+     if (typeof callee === 'string') {
+       node.callee = Node.identifier(callee)
+     } else if (callee instanceof Node) {
+       node.callee = callee
+     }
+
      node.arguments = args || []
 
      return node
@@ -28,7 +54,20 @@ export default class Node {
      let node = new Node('Literal')
 
      node.value = value
-     node.raw = value.toString()
+
+     return node
+   }
+
+   static memberExpression (obj: any, property: Node): Node {
+     let node: Node = new Node('MemberExpression')
+
+     if (obj instanceof Node) {
+       node.object = obj
+     } else if (typeof obj === 'string') {
+       node.object = Node.identifier(obj)
+     }
+
+     node.property = property
 
      return node
    }
@@ -44,12 +83,6 @@ export default class Node {
      let node = new Node('Property')
      node.key = Node.identifier(key)
      node.value = value
-
-     node.kind = 'init'
-
-     node.method    = false
-     node.computed  = false
-     node.shorthand = false
 
      return node
    }
@@ -70,9 +103,9 @@ export default class Node {
      return node
    }
 
-   static variableDeclarator (id: string, init: Node): Node {
+   static variableDeclarator (id: Node, init: Node): Node {
      let node = new Node('VariableDeclarator')
-     node.id = Node.identifier(id)
+     node.id = id
      node.init = init
 
      return node

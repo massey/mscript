@@ -1,7 +1,7 @@
 const fs          = require('fs')
 const path        = require('path')
 const mscript     = require('../dist/transpiler').default
-const simpleInput = fs.readFileSync(path.resolve(__dirname, 'param.js'), 'utf-8')
+const simpleInput = fs.readFileSync(path.resolve(__dirname, 'simple.js'), 'utf-8')
 const output      = mscript(simpleInput)
 
 console.log(output)
