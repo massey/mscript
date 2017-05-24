@@ -54,16 +54,18 @@ test('make a Program', () => {
 })
 
 test('make a Property', () => {
-  let v = Node.identifier('test')
-  let p = Node.property('test', v)
+  let k = Node.identifier('test')
+  let v = Node.literal('test')
+  let p = Node.property(k, v)
 
 
   expect(p instanceof Node).toBe(true)
   expect(p.type).toBe('Property')
+  expect(p.key instanceof Node).toBe(true)
   expect(p.key.name).toBe('test')
   expect(p.value instanceof Node).toBe(true)
-  expect(p.value.type).toBe('Identifier')
-  expect(p.value.name).toBe('test')
+  expect(p.value.type).toBe('Literal')
+  expect(p.value.value).toBe('test')
 })
 
 test('make a VariableDeclaration', () => {

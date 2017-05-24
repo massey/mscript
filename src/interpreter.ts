@@ -61,7 +61,8 @@ export default class Interpreter {
     this.inComponent = true
 
     let properties: Array<Node> = this.convertOptions(details.options)
-    properties.push(Node.property('name', Node.literal(details.id)))
+    let name = Node.identifier('name')
+    properties.push(Node.property(name, Node.literal(details.id)))
     let parent = Node.identifier('parent')
     let optionsObject: Node = Node.objectExpression(properties)
     let call: Node = Node.callExpression('component', [parent, optionsObject])
@@ -85,21 +86,11 @@ export default class Interpreter {
   }
 
   convertLabeledStatementToProperty (labeledStatement: Node): Node {
-    let key   = labeledStatement.label.name
+    let key   = labeledStatement.label
     let value = labeledStatement.body.expression
 
-    if (value.type === 'Identifier') {
-      let node = this.findIdentifier(value.name)
-      if (node) {
-        if (node.referenceType === 'param') {
-          value = Node.arrowFunctionExpression(
-            [], Interpreter.makeIdentifierGettable(value)
-          )
-        }
-      }
-    } else if (value.type !== 'Literal') {
-      this.walkExpression(value)
-      value = Node.arrowFunctionExpression([], value)
+    if (value.type !== 'Literal') {
+      value = this.walkExpression(value)
     } else if (value.type === 'Literal') {
       value = Node.literal(value.value)
     }
@@ -158,7 +149,8 @@ export default class Interpreter {
     this.inParam = true
 
     let properties: Array<Node> = this.convertOptions(details.options)
-    properties.push(Node.property('name', Node.literal(details.id)))
+    let name = Node.identifier('name')
+    properties.push(Node.property(name, Node.literal(details.id)))
     let optionsObject: Node = Node.objectExpression(properties)
     let parent = Node.identifier('parent')
     let call: Node = Node.callExpression('param', [parent, optionsObject])
@@ -181,61 +173,57 @@ export default class Interpreter {
   }
 
   /* Walk an expression and make identifiers that reference params gettable. */
-  walkExpression (expr: Node) {
-    var node
+  walkExpression (expr: Node): Node {
 
     switch (expr.type) {
       case 'BinaryExpression':
       if (expr.left.type === 'Identifier') {
-        let node = this.findIdentifier(expr.left.name)
-        if (node) {
-          if (node.referenceType === 'param') {
-            expr.left = Interpreter.makeIdentifierGettable(expr.left)
-          }
-        }
+        expr.left = this.walkExpression(expr.left)
       } else {
         this.walkExpression(expr.left)
       }
 
       if (expr.right.type === 'Identifier') {
-        let node = this.findIdentifier(expr.right.name)
-        if (node) {
-          if (this.findIdentifier(expr.right.name).referenceType === 'param') {
-            expr.right = Interpreter.makeIdentifierGettable(expr.right)
-          }
-        }
+        expr.right = this.walkExpression(expr.right)
       } else {
         this.walkExpression(expr.right)
       }
-      break
+
+      return Node.arrowFunctionExpression([], expr)
 
       case 'ConditionalExpression':
       if (expr.test.type === 'Identifier') {
-        if (this.findIdentifier(expr.test.name).referenceType === 'param') {
-          expr.test = Interpreter.makeIdentifierGettable(expr.test)
-        }
+        expr.test = this.walkExpression(expr.test)
       } else {
         this.walkExpression(expr.test)
       }
 
       if (expr.consequent.type === 'Identifier') {
-        if (this.findIdentifier(expr.consequent.name).referenceType === 'param') {
-          expr.consequent = Interpreter.makeIdentifierGettable(expr.consequent)
-        }
+        expr.consequent = this.walkExpression(expr.consequent)
       } else {
         this.walkExpression(expr.consequent)
       }
 
       if (expr.alternate.type === 'Identifier') {
-        if (this.findIdentifier(expr.alternate.name).referenceType === 'param') {
-          expr.alternate = Interpreter.makeIdentifierGettable(expr.alternate)
-        }
+        expr.alternate = this.walkExpression(expr.alternate)
       } else {
         this.walkExpression(expr.alternate)
       }
-      break
+
+      return Node.arrowFunctionExpression([], expr)
+
+      case 'Identifier':
+      let node = this.findIdentifier(expr.name)
+      if (node) {
+        if (node.referenceType === 'param') {
+          return Interpreter.makeIdentifierGettable(expr)
+        }
+      }
+
+      return Node.arrowFunctionExpression([], expr)
 
       default:
+      return expr
     }
   }
 

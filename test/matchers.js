@@ -6,9 +6,7 @@ function treeMatch(act, exp) {
 
     var curAct = act[key], curExp = exp[key]
 
-    if (!exp.hasOwnProperty(key) && key !== 'start' && key !== 'end') {
-      console.log(act)
-      console.log(exp)
+    if (!exp.hasOwnProperty(key) && key !== 'start' && key !== 'end' && key !== 'raw' && key !== 'computed') {
       throw new Error(`expected doesn't have key ${key}`)
     }
 
@@ -31,6 +29,24 @@ function treeMatch(act, exp) {
 expect.extend({
   treeMatch: function (received, argument) {
     let pass = treeMatch(received, argument)
+    if (pass) {
+      return {
+        message: () => (
+          'expected objects not to be equal'
+        ),
+        pass: true
+      }
+    } else {
+      return {
+        message: () => (
+          'expected objects to be equal'
+        ),
+        pass: false
+      }
+    }
+  },
+  deepEqual: function (received, argument) {
+    let pass = assert.deepEqual(received, argument)
     if (pass) {
       return {
         message: () => (

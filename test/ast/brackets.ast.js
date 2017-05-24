@@ -6,18 +6,21 @@ var node = Node.program()
 function paramWidth () {
   let properties = []
 
-  /* options keys */
-  let type = Node.identifier('type')
-  let value = Node.identifier('value')
-  let name = Node.identifier('name')
-  /* options values */
-  let typeValue = Node.literal('number')
-  let valueValue = Node.literal(1000)
-  let nameValue = Node.literal('width')
+  let A = Node.arrowFunctionExpression(
+    [],
+    Node.binaryExpression(
+      Node.identifier('height'),
+      '+',
+      Node.conditionalExpression(
+        Node.identifier('width'),
+        Node.literal(50),
+        Node.identifier('depth')
+      )
+    )
+  )
 
-  properties.push(Node.property(type, typeValue))
-  properties.push(Node.property(value, valueValue))
-  properties.push(Node.property(name, nameValue))
+  properties.push(Node.property(Node.identifier('A'), A))
+  properties.push(Node.property(Node.identifier('name'), Node.literal('base')))
 
   let objectExpression = Node.objectExpression(properties)
   let parent = Node.identifier('parent')

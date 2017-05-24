@@ -1,305 +1,36 @@
-module.exports = {
-  type: 'Program',
-  body: [
-    {
-      type: 'VariableDeclaration',
-      declarations: [
-        {
-          type: 'VariableDeclarator',
-          id: { type: 'Identifier', name: 'width'},
-          init: {
-            type: 'CallExpression',
-            callee: { type: 'Identifier', name: 'param'},
-            arguments: [
-              {
-                type: 'ObjectExpression',
-                properties: [
-                  {
-                    type: 'Property',
-                    key: { type: 'Identifier', name: 'type' },
-                    value: { type: 'Literal', value: 'number'}
-                  },
-                  {
-                    type: 'Property',
-                    key: { type: 'Identifier', name: 'value' },
-                    value: { type: 'Literal', value: 1000}
-                  },
-                  {
-                    type: 'Property',
-                    key: { type: 'Identifier', name: 'name' },
-                    value: { type: 'Literal', value: 'width'}
-                  },
-                ]
-              }
-            ]
-          }
-        }
-      ],
-      kind: 'var'
-    },
-    {
-      type: 'VariableDeclaration',
-      kind: 'var',
-      declarations: [
-        {
-          type: 'VariableDeclarator',
-          id: { type: 'Identifier', name: 'depth'},
-          init: {
-            type: 'CallExpression',
-            callee: { type: 'Identifier', name: 'param'},
-            arguments: [
-              {
-                type: 'ObjectExpression',
-                properties: [
-                  {
-                    type: 'Property',
-                    key: { type: 'Identifier', name: 'type' },
-                    value: { type: 'Literal', value: 'number'}
-                  },
-                  {
-                    type: 'Property',
-                    key: { type: 'Identifier', name: 'value' },
-                    value: { type: 'Literal', value: 600}
-                  },
-                  {
-                    type: 'Property',
-                    key: { type: 'Identifier', name: 'name' },
-                    value: { type: 'Literal', value: 'depth'}
-                  },
-                ]
-              }
-            ]
-          }
-        }
-      ]
-    },
-    {
-      type: 'VariableDeclaration',
-      kind: 'var',
-      declarations: [
-        {
-          type: 'VariableDeclarator',
-          id: { type: 'Identifier', name: 'height'},
-          init: {
-            type: 'CallExpression',
-            callee: { type: 'Identifier', name: 'param'},
-            arguments: [
-              {
-                type: 'ObjectExpression',
-                properties: [
-                  {
-                    type: 'Property',
-                    key: { type: 'Identifier', name: 'type' },
-                    value: { type: 'Literal', value: 'number'}
-                  },
-                  {
-                    type: 'Property',
-                    key: { type: 'Identifier', name: 'value' },
-                    value: { type: 'Literal', value: 1000}
-                  },
-                  {
-                    type: 'Property',
-                    key: { type: 'Identifier', name: 'name' },
-                    value: { type: 'Literal', value: 'depth'}
-                  }
-                ]
-              }
-            ]
-          }
-        }
-      ]
-    },
-    {
-      type: 'VariableDeclaration',
-      kind: 'var',
-      declarations: [
-        {
-          type: 'VariableDeclarator',
-          id: { type: 'Identifier', name: 'kickHeight'},
-          init: {
-            type: 'CallExpression',
-            callee: { type: 'Identifier', name: 'param'},
-            arguments: [
-              {
-                type: 'ObjectExpression',
-                properties: [
-                  {
-                    type: 'Property',
-                    key: { type: 'Identifier', name: 'type' },
-                    value: { type: 'Literal', value: 'number'}
-                  },
-                  {
-                    type: 'Property',
-                    key: { type: 'Identifier', name: 'value' },
-                    value: { type: 'Literal', value: 100}
-                  },
-                  {
-                    type: 'Property',
-                    key: { type: 'Identifier', name: 'name' },
-                    value: { type: 'Literal', value: 'kickHeight'}
-                  }
-                ]
-              }
-            ]
-          }
-        }
-      ]
-    },
-    {
-      type: 'VariableDeclaration',
-      kind: 'var',
-      declarations: [
-        {
-          type: 'VariableDeclarator',
-          id: { type: 'Identifier', name: 'base'},
-          init: {
-            type: 'CallExpression',
-            callee: { type: 'Identifier', name: 'component'},
-            arguments: [
-              {
-                type: 'ObjectExpression',
-                properties: [
-                  {
-                    type: 'Property',
-                    key: { type: 'Identifier', name: 'A' },
-                    value: {
-                      type: 'ArrowFunctionExpression',
-                      params: [],
-                      body: {
-                        type: 'BinaryExpression',
-                        left: {
-                          type: 'CallExpression',
-                          callee: {
-                            type: 'MemberExpression',
-                            object: { type: 'Identifier', name: 'width'},
-                            property: { type: 'Identifier', name: 'get'}
-                          },
-                          arguments: []
-                        },
-                        operator: '+',
-                        right: { type: 'Literal', start: 125, end: 128, value: 100, raw: '100' },
-                      },
-                      id: null,
-                      generator: false,
-                      expression: true
-                    }
-                  },
-                  {
-                    type: 'Property',
-                    key: { type: 'Identifier', name: 'B' },
-                    value: {
-                      type: 'ArrowFunctionExpression',
-                      params: [],
-                      body: {
-                        type: 'CallExpression',
-                        callee: {
-                          type: 'MemberExpression',
-                          object: { type: 'Identifier', name: 'depth' },
-                           property: { type: 'Identifier', name: 'get' }
-                        },
-                        arguments: []
-                      },
-                      id: null,
-                      generator: false,
-                      expression: true
-                    }
-                  },
-                  {
-                    type: 'Property',
-                    key: { type: 'Identifier', name: 'material' },
-                    value: { type: 'Literal', value: '01.002'}
-                  },
-                  {
-                    type: 'Property',
-                    key: { type: 'Identifier', name: 'name' },
-                    value: { type: 'Literal', value: 'base'}
-                  },
-                ]
-              }
-            ]
-          }
-        }
-      ]
-    },
-    {
-      type: 'VariableDeclaration',
-      kind: 'var',
-      declarations: [
-        {
-          type: 'VariableDeclarator',
-          id: { type: 'Identifier', name: 'back'},
-          init: {
-            type: 'CallExpression',
-            callee: { type: 'Identifier', name: 'component'},
-            arguments: [
-              {
-                type: 'ObjectExpression',
-                properties: [
-                  {
-                    type: 'Property',
-                    key: { type: 'Identifier', name: 'A' },
-                    value: {
-                      type: 'ArrowFunctionExpression',
-                      params: [],
-                      body: {
-                        type: 'CallExpression',
-                        callee: {
-                          type: 'MemberExpression',
-                          object: { type: 'Identifier', name: 'base'},
-                          property: { type: 'Identifier', name: 'A'}
-                        },
-                        arguments: []
-                      },
-                      id: null,
-                      generator: false,
-                      expression: true
-                    }
-                  },
-                  {
-                    type: 'Property',
-                    key: { type: 'Identifier', name: 'B' },
-                    value: {
-                      type: 'ArrowFunctionExpression',
-                      params: [],
-                      body: {
-                        type: 'BinaryExpression',
-                        left: {
-                          type: 'CallExpression',
-                          callee: {
-                            type: 'MemberExpression',
-                            object: { type: 'Identifier', name: 'base'},
-                            property: { type: 'Identifier', name: 'A'}
-                          },
-                          arguments: []
-                        },
-                        operator: '-',
-                        right: {
-                          type: 'MemberExpression',
-                          object: { type: 'Identifier', name: 'base'},
-                          property: { type: 'Identifier', name: 'thickness'}
-                        },
-                      },
-                      id: null,
-                      generator: false,
-                      expression: true
-                    }
-                  },
-                  {
-                    type: 'Property',
-                    key: { type: 'Identifier', name: 'material' },
-                    value: { type: 'Literal', value: '01.002'}
-                  },
-                  {
-                    type: 'Property',
-                    key: { type: 'Identifier', name: 'name' },
-                    value: { type: 'Literal', value: 'base'}
-                  },
-                ]
-              }
-            ]
-          }
-        }
-      ]
-    }
-  ]
+const Node = require('../../dist/node.js').default
+
+var node = Node.program()
+
+function componentBase () {
+  let properties = []
+
+  let A = Node.arrowFunctionExpression(
+    [],
+    Node.memberExpression(Node.identifier('base'), Node.identifier('A'))
+  )
+  let B = Node.arrowFunctionExpression(
+    [],
+    Node.binaryExpression(
+      Node.memberExpression(Node.identifier('base'), Node.identifier('B')),
+      '-',
+      Node.memberExpression(Node.identifier('base'), Node.identifier('thickness'))
+    )
+  )
+
+  properties.push(Node.property(Node.identifier('A'), A))
+  properties.push(Node.property(Node.identifier('B'), B))
+  properties.push(Node.property(Node.identifier('name'), Node.literal('back')))
+
+  let objectExpression = Node.objectExpression(properties)
+  let parent = Node.identifier('parent')
+  let call = Node.callExpression(Node.identifier('component'), [parent, objectExpression])
+  let id = Node.identifier('back')
+  let declarator = Node.variableDeclarator(id, call)
+
+  return Node.variableDeclaration('var', [declarator])
 }
+
+node.body.push(componentBase())
+
+module.exports = node

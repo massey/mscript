@@ -86,9 +86,10 @@ export default class Node {
      return node
    }
 
-   static property (key: string, value: Node): Node {
+   static property (key: Node, value: Node): Node {
      let node = new Node('Property')
-     node.key = Node.identifier(key)
+
+     node.key = key
      node.value = value
 
      return node

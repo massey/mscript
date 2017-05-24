@@ -49,6 +49,8 @@ const command = ast.body[0]
 const ii      = new Interpreter(ast)
 const output  = ii.compile()
 
+const inspect = require('util').inspect
+
 describe('new interpreter with dead simple AST - input AST', () => {
   test('list options in command statement with getOptions()', () => {
     let options = ii.getOptions(command)
@@ -102,12 +104,13 @@ describe('new interpreter with simple AST', () => {
     expect(ce.callee.name).toBe('param')
   })
 
-  test('CallExpression should have one \'ObjectExpression\' argument', () => {
-    expect(ce.arguments.length).toBe(1)
-    expect(ce.arguments[0].type).toBe('ObjectExpression')
+  test('CallExpression should have two arguments', () => {
+    expect(ce.arguments.length).toBe(2)
+    expect(ce.arguments[0].type).toBe('Identifier')
+    expect(ce.arguments[1].type).toBe('ObjectExpression')
   })
 
-  let oe = ce.arguments[0]
+  let oe = ce.arguments[1]
 
   test('ObjectExpression should have three properties', () => {
     expect(oe.properties.length).toBe(3)

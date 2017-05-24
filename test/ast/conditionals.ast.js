@@ -36,25 +36,25 @@ function paramDepth () {
   return Node.variableDeclaration('var', [declarator])
 }
 
-/* param depth */
+/* component base */
 function componentBase () {
   let properties = []
 
   /* options values */
-  let A = Node.arrowFunctionExpression([], Node.binaryExpression(
-    Node.callExpression(Node.memberExpression(
-      Node.identifier('width'), Node.identifier('get')
-    )),
-    '+',
-    Node.literal(100)
-  ))
-  let B = Node.arrowFunctionExpression([], Node.callExpression(
-    Node.memberExpression(Node.identifier('depth'), Node.identifier('get'))
-  ))
+  let A = Node.arrowFunctionExpression(
+    [],
+    Node.conditionalExpression(
+      Node.callExpression(
+        Node.memberExpression(Node.identifier('width'), Node.identifier('get'))
+      ),
+      Node.literal(50),
+      Node.callExpression(
+        Node.memberExpression(Node.identifier('depth'), Node.identifier('get'))
+      )
+    )
+  )
 
   properties.push(Node.property(Node.identifier('A'), A))
-  properties.push(Node.property(Node.identifier('B'), B))
-  properties.push(Node.property(Node.identifier('material'), Node.literal('01.002')))
   properties.push(Node.property(Node.identifier('name'), Node.literal('base')))
 
   let objectExpression = Node.objectExpression(properties)
