@@ -1,5 +1,6 @@
 const path        = require('path')
 const fs          = require('fs')
+const mscriptAST  = require('../dist/mscript.js').interpret
 const Interpreter = require('../dist/interpreter.js').default
 const Node        = require('../dist/node.js').default
 const parse       = require('acorn').parse
@@ -40,15 +41,15 @@ describe('interpreter static methods', () => {
 /* Here we instatiate with a simple AST and run compile. Check the output
  * against the expected AST. */
 
-const simpleInput = fs.readFileSync(path.resolve(__dirname, 'param.js'), 'utf-8')
-const simpleAST   = parse(simpleInput)
+const input   = fs.readFileSync(path.resolve(__dirname, './scripts/dead_simple.js'), 'utf-8')
+const ast     = parse(input)
 
-const command     = simpleAST.body[0]
+const command = ast.body[0]
 
-const ii          = new Interpreter(simpleAST)
-const output      = ii.compile()
+const ii      = new Interpreter(ast)
+const output  = ii.compile()
 
-describe('new interpreter with simple AST - input AST', () => {
+describe('new interpreter with dead simple AST - input AST', () => {
   test('list options in command statement with getOptions()', () => {
     let options = ii.getOptions(command)
     expect(options instanceof Array).toBe(true)
@@ -108,7 +109,7 @@ describe('new interpreter with simple AST', () => {
 
   let oe = ce.arguments[0]
 
-  test('ObjectExpression should have two properties', () => {
+  test('ObjectExpression should have three properties', () => {
     expect(oe.properties.length).toBe(3)
     expect(oe.properties[0].type).toBe('Property')
     expect(oe.properties[1].type).toBe('Property')
@@ -118,7 +119,7 @@ describe('new interpreter with simple AST', () => {
   test('first ObjectExpression property should have key \'type\' and be a string literal', () => {
     expect(oe.properties[0].key.name).toBe('type')
     expect(oe.properties[0].value.type).toBe('Literal')
-    expect(oe.properties[0].value.value).toBe('string')
+    expect(oe.properties[0].value.value).toBe('number')
   })
 
   test('second ObjectExpression property should have key \'value \' and be a number literal', () => {

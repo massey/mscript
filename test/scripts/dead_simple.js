@@ -1,4 +1,4 @@
 param width {
-  type: 'string'
+  type: 'number'
   value: 1000
 }

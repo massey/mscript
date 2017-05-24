@@ -3,7 +3,7 @@ import Interpreter from './interpreter'
 import * as escodegen from 'escodegen'
 import Node from './node'
 
-export default function transpile (input: string): string {
+export function transpile (input: string): string {
   let ast = acorn.parse(input)
   let i   = new Interpreter(ast as Node)
 
@@ -12,4 +12,11 @@ export default function transpile (input: string): string {
       semicolons: false
     }
   })
+}
+
+export function interpret (input: string): Node {
+  let ast = acorn.parse(input)
+  let i   = new Interpreter(ast as Node)
+
+  return  i.compile()
 }

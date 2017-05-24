@@ -43,6 +43,17 @@ export default class Node {
      return node
    }
 
+   static conditionalExpression
+   (test: Node, consequent: Node, alternate: Node): Node {
+     let node = new Node('ConditionalExpression')
+
+     node.test       = test
+     node.consequent = consequent
+     node.alternate  = alternate
+
+     return node
+   }
+
    static identifier (name: string): Node {
      let node = new Node('Identifier')
      node.name = name
@@ -58,14 +69,10 @@ export default class Node {
      return node
    }
 
-   static memberExpression (obj: any, property: Node): Node {
+   static memberExpression (obj: Node, property: Node): Node {
      let node: Node = new Node('MemberExpression')
 
-     if (obj instanceof Node) {
-       node.object = obj
-     } else if (typeof obj === 'string') {
-       node.object = Node.identifier(obj)
-     }
+     node.object = obj
 
      node.property = property
 
