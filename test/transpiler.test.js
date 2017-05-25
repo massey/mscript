@@ -41,7 +41,7 @@ describe('Try some AST equality testing', () => {
 
     const inspect = require('util').inspect
 
-    expect(ast).deepEqual(expAST)
+    expect(ast).treeMatch(expAST)
     expect(mscript(input))
   })
 

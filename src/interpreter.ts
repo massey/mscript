@@ -89,13 +89,15 @@ export default class Interpreter {
     let key   = labeledStatement.label
     let value = labeledStatement.body.expression
 
+    value = this.walkExpression(value)
+
     if (value.type !== 'Literal') {
-      value = this.walkExpression(value)
+      value = Node.arrowFunctionExpression([], value)
     } else if (value.type === 'Literal') {
       value = Node.literal(value.value)
     }
 
-    return Node.property(key, value)
+    return Node.property(Node.identifier(key.name), value)
   }
 
   findIdentifier (name: string): Node {
@@ -177,50 +179,34 @@ export default class Interpreter {
 
     switch (expr.type) {
       case 'BinaryExpression':
-      if (expr.left.type === 'Identifier') {
-        expr.left = this.walkExpression(expr.left)
-      } else {
-        this.walkExpression(expr.left)
-      }
-
-      if (expr.right.type === 'Identifier') {
-        expr.right = this.walkExpression(expr.right)
-      } else {
+      return Node.binaryExpression(
+        this.walkExpression(expr.left),
+        expr.operator,
         this.walkExpression(expr.right)
-      }
-
-      return Node.arrowFunctionExpression([], expr)
+      )
 
       case 'ConditionalExpression':
-      if (expr.test.type === 'Identifier') {
-        expr.test = this.walkExpression(expr.test)
-      } else {
-        this.walkExpression(expr.test)
-      }
-
-      if (expr.consequent.type === 'Identifier') {
-        expr.consequent = this.walkExpression(expr.consequent)
-      } else {
-        this.walkExpression(expr.consequent)
-      }
-
-      if (expr.alternate.type === 'Identifier') {
-        expr.alternate = this.walkExpression(expr.alternate)
-      } else {
+      return Node.conditionalExpression(
+        this.walkExpression(expr.test),
+        this.walkExpression(expr.consequent),
         this.walkExpression(expr.alternate)
-      }
-
-      return Node.arrowFunctionExpression([], expr)
+      )
 
       case 'Identifier':
-      let node = this.findIdentifier(expr.name)
-      if (node) {
-        if (node.referenceType === 'param') {
+      let id = this.findIdentifier(expr.name)
+      if (id) {
+        if (id.referenceType === 'param') {
           return Interpreter.makeIdentifierGettable(expr)
         }
       }
 
-      return Node.arrowFunctionExpression([], expr)
+      return Node.identifier(expr.name)
+
+      case 'MemberExpression':
+      return Node.memberExpression(
+        this.walkExpression(expr.object),
+        this.walkExpression(expr.property)
+      )
 
       default:
       return expr
@@ -244,8 +230,9 @@ export default class Interpreter {
   }
 
   static makeIdentifierGettable (id: Node): Node {
-    let prop = Node.identifier('get')
-    let me = Node.memberExpression(id, prop)
+    let prop: Node = Node.identifier('get')
+    let obj: Node  = Node.identifier(id.name)
+    let me: Node   = Node.memberExpression(obj, prop)
     let node: Node = Node.callExpression(me)
 
     return node
