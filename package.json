@@ -2,7 +2,7 @@
   "name": "interpreter",
   "version": "1.0.0",
   "description": "MScript parser and compiler.",
-  "main": "dist/interpreter.js",
+  "main": "dist/mscript.js",
   "scripts": {
     "test-build": "tsc && webpack --config build/webpack.config.js",
     "build": "webpack --config build/webpack.config.js",
