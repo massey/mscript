@@ -3,8 +3,9 @@ const path = require('path')
 module.exports = {
   entry: './src/mscript.ts',
   output: {
-    path: path.join[__dirname, 'dist'],
-    filename: 'mscript.js'
+    path: path.resolve(__dirname, '../dist'),
+    filename: 'mscript.js',
+    libraryTarget: 'commonjs2'
   },
   module: {
     rules: [
@@ -20,5 +21,6 @@ module.exports = {
   },
   resolve: {
     extensions: ['.ts', '.js']
-  }
+  },
+  devtool: 'source-map'
 }

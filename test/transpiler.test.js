@@ -2,10 +2,11 @@ const assert      = require('assert')
 const fs          = require('fs')
 const path        = require('path')
 
-const mscript     = require('../mscript').transpile
-const mscriptAST  = require('../mscript').interpret
+const mscript     = require('../dist/mscript').transpile
+const mscriptAST  = require('../dist/mscript').interpret
 
 const deadSimpleInput  = fs.readFileSync(path.resolve(__dirname, './scripts/dead_simple.js'), 'utf-8')
+console.log(mscript)
 const deadSimpleOutput = mscript(deadSimpleInput)
 
 test('mscript output is truthy', () => {

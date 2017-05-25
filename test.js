@@ -2,8 +2,13 @@ const inspect = require('util').inspect
 const fs = require('fs')
 const path = require('path')
 const interpret = require('./dist/mscript').interpret
-const transpile = require('./dist/mscript').transpile
+const mscript = require('./dist/mscript').transpile
 
-const input = fs.readFileSync(path.resolve(__dirname, './test/scripts/base_single.js'), 'utf-8')
+const parse   = require('acorn').parse
+const astring = require('astring')
+const eso = require('esotope')
 
-console.log(transpile(input))
+const input = fs.readFileSync(path.resolve(__dirname, './test/scripts/dead_simple.js'), 'utf-8')
+
+console.log(inspect(interpret(input), {depth: null}))
+console.log(eso.generate(interpret(input)))

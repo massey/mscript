@@ -1,6 +1,6 @@
 const path        = require('path')
 const fs          = require('fs')
-const mscriptAST  = require('../mscript.js').interpret
+const mscriptAST  = require('../dist/mscript.js').interpret
 const Interpreter = require('../dist/interpreter.js').default
 const Node        = require('../dist/node.js').default
 const parse       = require('acorn').parse

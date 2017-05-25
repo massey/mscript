@@ -4,16 +4,18 @@
   "description": "MScript parser and compiler.",
   "main": "dist/interpreter.js",
   "scripts": {
-    "build": "tsc",
-    "build-ts": "node build/build.js",
-    "test": "npm run build && jest"
+    "test-build": "tsc && webpack --config build/webpack.config.js",
+    "build": "webpack --config build/webpack.config.js",
+    "build-ts": "webpack --config build/webpack.config.js",
+    "test": "npm run test-build && jest"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "acorn": "git+https://github.com/massey/acorn.git",
     "astring": "^1.0.2",
-    "escodegen": "^1.8.1"
+    "escodegen": "^1.8.1",
+    "esotope": "^1.4.5"
   },
   "devDependencies": {
     "babel-core": "^6.24.1",
