@@ -13,8 +13,6 @@
   "license": "ISC",
   "dependencies": {
     "acorn": "git+https://github.com/massey/acorn.git",
-    "astring": "^1.0.2",
-    "escodegen": "^1.8.1",
     "esotope": "^1.4.5"
   },
   "devDependencies": {
