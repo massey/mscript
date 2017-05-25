@@ -12,11 +12,16 @@
   "license": "ISC",
   "dependencies": {
     "acorn": "git+https://github.com/massey/acorn.git",
+    "astring": "^1.0.2",
     "escodegen": "^1.8.1"
   },
   "devDependencies": {
+    "babel-core": "^6.24.1",
+    "babel-loader": "^7.0.0",
+    "babel-preset-env": "^1.5.1",
     "jest": "^20.0.3",
     "ts-jest": "^20.0.4",
+    "ts-loader": "^2.1.0",
     "typescript": "^2.3.2",
     "webpack": "^2.6.0"
   },

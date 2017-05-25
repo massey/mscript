@@ -3,7 +3,7 @@ const path = require('path')
 module.exports = {
   entry: './src/mscript.ts',
   output: {
-    path: path.resolve(__dirname, 'dist'),
+    path: path.join[__dirname, 'dist'],
     filename: 'mscript.js'
   },
   module: {
@@ -11,13 +11,14 @@ module.exports = {
       {
         test: /\.ts$/,
         use:['babel-loader', 'ts-loader']
+      },
+      {
+        test: /\.js$/,
+        use:['babel-loader']
       }
     ]
   },
   resolve: {
-    fallback: [path.join(__dirname, '../node_modules')]
-  },
-  resolveLoader: {
-    fallback: [path.join(__dirname, '../node_modules')]
+    extensions: ['.ts', '.js']
   }
 }
