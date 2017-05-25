@@ -6,23 +6,14 @@ var node = Node.program()
 function paramWidth () {
   let properties = []
 
-  /* options keys */
-  let type = Node.identifier('type')
-  let value = Node.identifier('value')
-  let name = Node.identifier('name')
-  /* options values */
-  let typeValue = Node.literal('number')
-  let valueValue = Node.literal(1000)
-  let nameValue = Node.literal('width')
-
-  properties.push(Node.property(type, typeValue))
-  properties.push(Node.property(value, valueValue))
-  properties.push(Node.property(name, nameValue))
+  properties.push(Node.property(Node.identifier('type'), Node.literal('number')))
+  properties.push(Node.property(Node.identifier('value'), Node.literal(1000)))
+  properties.push(Node.property(Node.identifier('name'), Node.literal('width')))
 
   let objectExpression = Node.objectExpression(properties)
   let parent = Node.identifier('parent')
   let call = Node.callExpression('param', [parent, objectExpression])
-  let id = Node.identifier('param')
+  let id = Node.identifier('width')
   let declarator = Node.variableDeclarator(id, call)
 
   return Node.variableDeclaration('var', [declarator])

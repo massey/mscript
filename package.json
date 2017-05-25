@@ -5,6 +5,7 @@
   "main": "dist/interpreter.js",
   "scripts": {
     "build": "tsc",
+    "build-ts": "node build/build.js",
     "test": "npm run build && jest"
   },
   "author": "",
@@ -16,7 +17,8 @@
   "devDependencies": {
     "jest": "^20.0.3",
     "ts-jest": "^20.0.4",
-    "typescript": "^2.3.2"
+    "typescript": "^2.3.2",
+    "webpack": "^2.6.0"
   },
   "jest": {
     "globals": {

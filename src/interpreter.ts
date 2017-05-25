@@ -1,4 +1,5 @@
 import Node from './node'
+import { ParamData, SavedData } from './types/massive'
 
 export default class Interpreter {
   context: Array<Node>
@@ -6,12 +7,12 @@ export default class Interpreter {
   output: Node
   inputPos: number
   inputNode: Node
-  data:  object
+  data:  SavedData
   inComponent: Boolean
   inParam: Boolean
   stack: Array<Array<Node>>
 
-  constructor (ast: Node, data?: object) {
+  constructor (ast: Node, data?: SavedData) {
     this.input    = ast
     this.inputPos = 0
     this.data     = data
@@ -133,12 +134,12 @@ export default class Interpreter {
     })
   }
 
-  openScope (context: Node) {
+  openScope (context: Node): void {
     this.context.push(context)
     this.stack.push([])
   }
 
-  closeScope () {
+  closeScope (): void {
     this.context.pop()
     this.stack.pop()
   }
@@ -147,10 +148,23 @@ export default class Interpreter {
     this.getCurrentScope().push(id)
   }
 
-  param (command: Node, details: {id: string, options: Array<Node> }): void {
+  param
+  (command: Node, details: {id: string, options: Array<Node> }): void {
     this.inParam = true
 
     let properties: Array<Node> = this.convertOptions(details.options)
+
+    if (this.data) {
+      if (this.data.params) {
+        let param = this.data.params.find((p: ParamData) => {
+          return p.name === details.id
+        })
+
+
+        Interpreter.modifyParamOptions(properties, param)
+      }
+    }
+
     let name = Node.identifier('name')
     properties.push(Node.property(name, Node.literal(details.id)))
     let optionsObject: Node = Node.objectExpression(properties)
@@ -202,6 +216,9 @@ export default class Interpreter {
 
       return Node.identifier(expr.name)
 
+      case 'Literal':
+      return Node.literal(expr.value)
+
       case 'MemberExpression':
       return Node.memberExpression(
         this.walkExpression(expr.object),
@@ -236,5 +253,22 @@ export default class Interpreter {
     let node: Node = Node.callExpression(me)
 
     return node
+  }
+
+  static modifyParamOptions
+  (options: Array<Node>, savedParam: ParamData) {
+    if (savedParam.value) {
+      let option = options.find(o => {
+        return o.key.name === 'value'
+      })
+      option.value.value = savedParam.value
+    }
+
+    if (savedParam.accessor) {
+      let option = options.find(o => {
+        return o.key.name === 'accessor'
+      })
+      option.value.value = savedParam.accessor
+    }
   }
 }

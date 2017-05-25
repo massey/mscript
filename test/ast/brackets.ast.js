@@ -24,8 +24,8 @@ function paramWidth () {
 
   let objectExpression = Node.objectExpression(properties)
   let parent = Node.identifier('parent')
-  let call = Node.callExpression('param', [parent, objectExpression])
-  let id = Node.identifier('param')
+  let call = Node.callExpression('component', [parent, objectExpression])
+  let id = Node.identifier('base')
   let declarator = Node.variableDeclarator(id, call)
 
   return Node.variableDeclaration('var', [declarator])

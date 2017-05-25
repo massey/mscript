@@ -46,7 +46,15 @@ expect.extend({
     }
   },
   deepEqual: function (received, argument) {
-    let pass = assert.deepEqual(received, argument)
+    let pass = true
+
+    try {
+      assert.deepEqual(received, argument)
+    } catch (e) {
+      pass = false
+      console.error(e)
+    }
+
     if (pass) {
       return {
         message: () => (

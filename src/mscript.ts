@@ -2,10 +2,11 @@ import * as acorn from 'acorn'
 import Interpreter from './interpreter'
 import * as escodegen from 'escodegen'
 import Node from './node'
+import { SavedData } from './types/massive'
 
-export function transpile (input: string): string {
+export function transpile (input: string, savedData?: SavedData): string {
   let ast = acorn.parse(input)
-  let i   = new Interpreter(ast as Node)
+  let i   = new Interpreter(ast as Node, savedData)
 
   return escodegen.generate(i.compile(), {
     format: {
@@ -14,9 +15,9 @@ export function transpile (input: string): string {
   })
 }
 
-export function interpret (input: string): Node {
+export function interpret (input: string, savedData?: SavedData): Node {
   let ast = acorn.parse(input)
-  let i   = new Interpreter(ast as Node)
+  let i   = new Interpreter(ast as Node, savedData)
 
   return  i.compile()
 }
