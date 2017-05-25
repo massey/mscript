@@ -13,5 +13,11 @@ module.exports = {
         use:['babel-loader', 'ts-loader']
       }
     ]
+  },
+  resolve: {
+    fallback: [path.join(__dirname, '../node_modules')]
+  },
+  resolveLoader: {
+    fallback: [path.join(__dirname, '../node_modules')]
   }
 }
