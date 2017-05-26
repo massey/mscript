@@ -11,11 +11,9 @@
   },
   "author": "",
   "license": "ISC",
-  "dependencies": {
-    "acorn": "git+https://github.com/massey/acorn.git",
-    "esotope": "^1.4.5"
-  },
   "devDependencies": {
+    "acorn": "git+https://github.com/massey/acorn.git",
+    "esotope": "^1.4.5",
     "babel-core": "^6.24.1",
     "babel-loader": "^7.0.0",
     "babel-preset-env": "^1.5.1",
