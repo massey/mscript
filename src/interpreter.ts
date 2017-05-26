@@ -9,6 +9,7 @@ export default class Interpreter {
   inputNode: Node
   data:  SavedData
   inComponent: Boolean
+  inGroup: Boolean
   inParam: Boolean
   stack: Array<Array<Node>>
 
@@ -19,30 +20,43 @@ export default class Interpreter {
 
     /* Keeps track of what command we're inside of. */
     this.context = []
-    this.inParam = this.inComponent = false
+    this.inGroup = this.inParam = this.inComponent = false
 
     /* Identifiers are kept in nested arrays. */
     this.stack = []
   }
 
   compile (): Node {
-    this.inputNode = this.input.body[this.inputPos]
+    // this.inputNode = this.input.body[this.inputPos]
+    //
+    this.output = Node.program()
 
-    let node = this.output = Node.program()
+    this.openScope(this.input)
 
-    this.openScope(node)
-
-    this.input.body.forEach((inputNode: Node) => {
-      this.compileNode(inputNode)
-    })
+    this.compileNode(this.input)
 
     return this.output
   }
 
-  compileNode (inputNode: Node) {
+  compileNode (node: Node) {
 
-    switch (inputNode.type) {
-      case 'CommandStatement': this.commandStatement(inputNode)
+    switch (node.type) {
+      case 'BlockStatement':
+      node.body.forEach((n: Node) => {
+        this.compileNode(n)
+      })
+      break
+
+      case 'CommandStatement':
+      this.commandStatement(node)
+      break
+
+      case 'Program':
+      node.body.forEach((n: Node) => {
+        this.compileNode(n)
+      })
+      break
+
       default:
     }
   }
@@ -52,6 +66,7 @@ export default class Interpreter {
 
     switch (details.name) {
       case 'component': this.component(command, details); break
+      case 'group': this.group(command, details); break
       case 'param': this.param(command, details); break
       default:
     }
@@ -134,6 +149,30 @@ export default class Interpreter {
     })
   }
 
+  group
+  (command: Node, details: {id: string, options: Array<Node> }): void {
+    this.inGroup = true
+
+    let properties: Array<Node> = this.convertOptions(details.options)
+    let name = Node.identifier('name')
+    properties.push(Node.property(name, Node.literal(details.id)))
+    let parent = Node.identifier('parent')
+    let optionsObject: Node = Node.objectExpression(properties)
+    let call: Node = Node.callExpression('group', [parent, optionsObject])
+    let id: Node   = Node.identifier(details.id)
+    let declarator = Node.variableDeclarator(id, call)
+    let node: Node = Node.variableDeclaration('var', [declarator])
+
+    this.output.body.push(node)
+
+    this.openScope(command)
+    if (command.body) this.compileNode(command.body)
+    this.closeScope()
+
+    this.inGroup = false
+
+  }
+
   openScope (context: Node): void {
     this.context.push(context)
     this.stack.push([])
@@ -180,6 +219,19 @@ export default class Interpreter {
     this.inParam = false
 
     this.output.body.push(node)
+
+    if (this.inGroup) {
+      let add = Node.expressionStatement(
+        Node.callExpression(
+          Node.memberExpression(
+            Node.identifier(this.getCurrentContext().id.name),
+            Node.identifier('add')
+          ),
+          [id]
+        )
+      )
+      this.output.body.push(add)
+    }
   }
 
   /* Push node onto scope stack. */

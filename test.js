@@ -8,7 +8,9 @@ const parse   = require('acorn').parse
 const astring = require('astring')
 const eso = require('esotope')
 
-const input = fs.readFileSync(path.resolve(__dirname, './test/scripts/dead_simple.js'), 'utf-8')
+const input = fs.readFileSync(path.resolve(__dirname, './test/scripts/nested.js'), 'utf-8')
 
+// console.log(inspect(parse(input), {depth: null}))
 console.log(inspect(interpret(input), {depth: null}))
 console.log(eso.generate(interpret(input)))
+// console.log(mscript(input))

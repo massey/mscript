@@ -5795,7 +5795,7 @@ var Interpreter = function () {
         this.data = data;
         /* Keeps track of what command we're inside of. */
         this.context = [];
-        this.inParam = this.inComponent = false;
+        this.inGroup = this.inParam = this.inComponent = false;
         /* Identifiers are kept in nested arrays. */
         this.stack = [];
     }
@@ -5803,22 +5803,32 @@ var Interpreter = function () {
     _createClass(Interpreter, [{
         key: "compile",
         value: function compile() {
-            var _this = this;
-
-            this.inputNode = this.input.body[this.inputPos];
-            var node = this.output = node_1.default.program();
-            this.openScope(node);
-            this.input.body.forEach(function (inputNode) {
-                _this.compileNode(inputNode);
-            });
+            // this.inputNode = this.input.body[this.inputPos]
+            //
+            this.output = node_1.default.program();
+            this.openScope(this.input);
+            this.compileNode(this.input);
             return this.output;
         }
     }, {
         key: "compileNode",
-        value: function compileNode(inputNode) {
-            switch (inputNode.type) {
+        value: function compileNode(node) {
+            var _this = this;
+
+            switch (node.type) {
+                case 'BlockStatement':
+                    node.body.forEach(function (n) {
+                        _this.compileNode(n);
+                    });
+                    break;
                 case 'CommandStatement':
-                    this.commandStatement(inputNode);
+                    this.commandStatement(node);
+                    break;
+                case 'Program':
+                    node.body.forEach(function (n) {
+                        _this.compileNode(n);
+                    });
+                    break;
                 default:
             }
         }
@@ -5829,6 +5839,9 @@ var Interpreter = function () {
             switch (details.name) {
                 case 'component':
                     this.component(command, details);
+                    break;
+                case 'group':
+                    this.group(command, details);
                     break;
                 case 'param':
                     this.param(command, details);
@@ -5910,6 +5923,25 @@ var Interpreter = function () {
             });
         }
     }, {
+        key: "group",
+        value: function group(command, details) {
+            this.inGroup = true;
+            var properties = this.convertOptions(details.options);
+            var name = node_1.default.identifier('name');
+            properties.push(node_1.default.property(name, node_1.default.literal(details.id)));
+            var parent = node_1.default.identifier('parent');
+            var optionsObject = node_1.default.objectExpression(properties);
+            var call = node_1.default.callExpression('group', [parent, optionsObject]);
+            var id = node_1.default.identifier(details.id);
+            var declarator = node_1.default.variableDeclarator(id, call);
+            var node = node_1.default.variableDeclaration('var', [declarator]);
+            this.output.body.push(node);
+            this.openScope(command);
+            if (command.body) this.compileNode(command.body);
+            this.closeScope();
+            this.inGroup = false;
+        }
+    }, {
         key: "openScope",
         value: function openScope(context) {
             this.context.push(context);
@@ -5951,6 +5983,10 @@ var Interpreter = function () {
             this.pushToStack(id);
             this.inParam = false;
             this.output.body.push(node);
+            if (this.inGroup) {
+                var add = node_1.default.expressionStatement(node_1.default.callExpression(node_1.default.memberExpression(node_1.default.identifier(this.getCurrentContext().id.name), node_1.default.identifier('add')), [id]));
+                this.output.body.push(add);
+            }
         }
         /* Push node onto scope stack. */
 
@@ -6123,6 +6159,13 @@ var Node = function () {
             node.test = test;
             node.consequent = consequent;
             node.alternate = alternate;
+            return node;
+        }
+    }, {
+        key: "expressionStatement",
+        value: function expressionStatement(expression) {
+            var node = new Node('ExpressionStatement');
+            node.expression = expression;
             return node;
         }
     }, {

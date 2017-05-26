@@ -6,7 +6,6 @@ const mscript     = require('../dist/mscript').transpile
 const mscriptAST  = require('../dist/mscript').interpret
 
 const deadSimpleInput  = fs.readFileSync(path.resolve(__dirname, './scripts/dead_simple.js'), 'utf-8')
-console.log(mscript)
 const deadSimpleOutput = mscript(deadSimpleInput)
 
 test('mscript output is truthy', () => {
@@ -21,6 +20,7 @@ describe('Try some AST equality testing', () => {
     let expAST = require('./ast/dead_simple.ast.js')
 
     expect(ast).toEqual(expAST)
+    expect(mscript(input))
   })
 
   test('a simple mscript', () => {
@@ -87,5 +87,23 @@ describe('Try some AST equality testing', () => {
 
     expect(ast).toEqual(expAST)
     expect(mscript(input, options))
+  })
+
+  test('a script with a group', () => {
+    let input  = fs.readFileSync(path.resolve(__dirname, './scripts/group.js'), 'utf-8')
+    let ast    = mscriptAST(input)
+    let expAST = require('./ast/group.ast.js')
+
+    expect(ast).toEqual(expAST)
+    expect(mscript(input))
+  })
+
+  test('a script with nested params in a group', () => {
+    let input  = fs.readFileSync(path.resolve(__dirname, './scripts/nested.js'), 'utf-8')
+    let ast    = mscriptAST(input)
+    let expAST = require('./ast/nested.ast.js')
+
+    expect(ast).toEqual(expAST)
+    expect(mscript(input))
   })
 })

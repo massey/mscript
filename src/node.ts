@@ -54,6 +54,14 @@ export default class Node {
      return node
    }
 
+   static expressionStatement (expression: Node): Node {
+     let node = new Node('ExpressionStatement')
+
+     node.expression = expression
+
+     return node
+   }
+
    static identifier (name: string): Node {
      let node = new Node('Identifier')
      node.name = name
