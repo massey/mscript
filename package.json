@@ -1,5 +1,5 @@
 {
-  "name": "interpreter",
+  "name": "mscript",
   "version": "1.0.0",
   "description": "MScript parser and compiler.",
   "main": "dist/mscript.js",
