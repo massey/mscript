@@ -3,6 +3,7 @@ import { ParamData, SavedData } from './types/massive'
 
 export default class Interpreter {
   context: Array<Node>
+  isGettable: Boolean
   input: Node
   output: Node
   inputPos: number
@@ -21,6 +22,9 @@ export default class Interpreter {
     /* Keeps track of what command we're inside of. */
     this.context = []
     this.inGroup = this.inParam = this.inComponent = false
+
+    /* Signals if an expression needs to be wrapped in an arrow function. */
+    this.isGettable = false
 
     /* Identifiers are kept in nested arrays. */
     this.stack = []
@@ -107,8 +111,9 @@ export default class Interpreter {
 
     value = this.walkExpression(value)
 
-    if (value.type !== 'Literal') {
+    if (this.isGettable) {
       value = Node.arrowFunctionExpression([], value)
+      this.isGettable = false
     } else if (value.type === 'Literal') {
       value = Node.literal(value.value)
     }
@@ -262,6 +267,7 @@ export default class Interpreter {
       let id = this.findIdentifier(expr.name)
       if (id) {
         if (id.referenceType === 'param') {
+          this.isGettable = true
           return Interpreter.makeIdentifierGettable(expr)
         }
       }

@@ -5796,6 +5796,8 @@ var Interpreter = function () {
         /* Keeps track of what command we're inside of. */
         this.context = [];
         this.inGroup = this.inParam = this.inComponent = false;
+        /* Signals if an expression needs to be wrapped in an arrow function. */
+        this.isGettable = false;
         /* Identifiers are kept in nested arrays. */
         this.stack = [];
     }
@@ -5882,8 +5884,9 @@ var Interpreter = function () {
             var key = labeledStatement.label;
             var value = labeledStatement.body.expression;
             value = this.walkExpression(value);
-            if (value.type !== 'Literal') {
+            if (this.isGettable) {
                 value = node_1.default.arrowFunctionExpression([], value);
+                this.isGettable = false;
             } else if (value.type === 'Literal') {
                 value = node_1.default.literal(value.value);
             }
@@ -6010,6 +6013,7 @@ var Interpreter = function () {
                     var id = this.findIdentifier(expr.name);
                     if (id) {
                         if (id.referenceType === 'param') {
+                            this.isGettable = true;
                             return Interpreter.makeIdentifierGettable(expr);
                         }
                     }

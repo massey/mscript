@@ -5,17 +5,11 @@ var node = Node.program()
 function componentBase () {
   let properties = []
 
-  let A = Node.arrowFunctionExpression(
-    [],
-    Node.memberExpression(Node.identifier('base'), Node.identifier('A'))
-  )
-  let B = Node.arrowFunctionExpression(
-    [],
-    Node.binaryExpression(
-      Node.memberExpression(Node.identifier('base'), Node.identifier('B')),
-      '-',
-      Node.memberExpression(Node.identifier('base'), Node.identifier('thickness'))
-    )
+  let A = Node.memberExpression(Node.identifier('base'), Node.identifier('A'))
+  let B = Node.binaryExpression(
+    Node.memberExpression(Node.identifier('base'), Node.identifier('B')),
+    '-',
+    Node.memberExpression(Node.identifier('base'), Node.identifier('thickness'))
   )
 
   properties.push(Node.property(Node.identifier('A'), A))

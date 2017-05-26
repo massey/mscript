@@ -6,16 +6,13 @@ var node = Node.program()
 function paramWidth () {
   let properties = []
 
-  let A = Node.arrowFunctionExpression(
-    [],
-    Node.binaryExpression(
-      Node.identifier('height'),
-      '+',
-      Node.conditionalExpression(
-        Node.identifier('width'),
-        Node.literal(50),
-        Node.identifier('depth')
-      )
+  let A = Node.binaryExpression(
+    Node.identifier('height'),
+    '+',
+    Node.conditionalExpression(
+      Node.identifier('width'),
+      Node.literal(50),
+      Node.identifier('depth')
     )
   )
 
