@@ -1,3 +1,7 @@
+/**
+Identifiers that begin with a '$' should be converted to a string literal.
+*/
+
 const Node = require('../../dist/node.js').default
 
 var node = Node.program()
@@ -39,7 +43,7 @@ function paramFaceMaterial () {
   let properties = []
 
   properties.push(Node.property(Node.identifier('type'), Node.literal('object')))
-  properties.push(Node.property(Node.identifier('source'), Node.literal('materials')))
+  properties.push(Node.property(Node.identifier('source'), Node.literal('$materials')))
   properties.push(Node.property(Node.identifier('name'), Node.literal('faceMaterial')))
 
   let objectExpression = Node.objectExpression(properties)
