@@ -5793,9 +5793,11 @@ var Interpreter = function () {
         this.input = ast;
         this.inputPos = 0;
         this.data = data;
-        /* Keeps track of what command we're inside of. */
+        /* Keep track of what command we're inside of. */
         this.context = [];
         this.inGroup = this.inParam = this.inComponent = false;
+        /* Keep track of what type of node we're in when walking an expression. */
+        this.inside = '';
         /* Signals if an expression needs to be wrapped in an arrow function. */
         this.isGettable = false;
         /* Identifiers are kept in nested arrays. */
@@ -5864,8 +5866,14 @@ var Interpreter = function () {
             var id = node_1.default.identifier(details.id);
             var declarator = node_1.default.variableDeclarator(id, call);
             var node = node_1.default.variableDeclaration('var', [declarator]);
-            this.inComponent = false;
+            Object.defineProperty(id, 'referenceType', { value: 'component' });
+            this.pushToStack(id);
             this.output.body.push(node);
+            if (this.inGroup) {
+                var add = node_1.default.expressionStatement(node_1.default.callExpression(node_1.default.memberExpression(node_1.default.identifier(this.getCurrentContext().id.name), node_1.default.identifier('add')), [id]));
+                this.output.body.push(add);
+            }
+            this.inComponent = false;
         }
     }, {
         key: "convertOptions",
@@ -5984,12 +5992,12 @@ var Interpreter = function () {
             var node = node_1.default.variableDeclaration('var', [declarator]);
             Object.defineProperty(id, 'referenceType', { value: 'param' });
             this.pushToStack(id);
-            this.inParam = false;
             this.output.body.push(node);
             if (this.inGroup) {
                 var add = node_1.default.expressionStatement(node_1.default.callExpression(node_1.default.memberExpression(node_1.default.identifier(this.getCurrentContext().id.name), node_1.default.identifier('add')), [id]));
                 this.output.body.push(add);
             }
+            this.inParam = false;
         }
         /* Push node onto scope stack. */
 
@@ -6015,13 +6023,18 @@ var Interpreter = function () {
                         if (id.referenceType === 'param') {
                             this.isGettable = true;
                             return Interpreter.makeIdentifierGettable(expr);
+                        } else if (id.referenceType === 'component') {
+                            this.isGettable = true;
                         }
                     }
                     return node_1.default.identifier(expr.name);
                 case 'Literal':
                     return node_1.default.literal(expr.value);
                 case 'MemberExpression':
-                    return node_1.default.memberExpression(this.walkExpression(expr.object), this.walkExpression(expr.property));
+                    this.inside = 'MemberExpression';
+                    var node = node_1.default.memberExpression(this.walkExpression(expr.object), this.walkExpression(expr.property));
+                    this.inside = '';
+                    return node;
                 default:
                     return expr;
             }

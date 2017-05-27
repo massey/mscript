@@ -9,5 +9,10 @@ group all {
         type: 'number'
         value: 1000
     }
-    
+
+    component benchtop {
+      A: 23
+      B: 60
+      material: faceMaterial
+    }
 }

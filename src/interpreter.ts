@@ -5,6 +5,7 @@ export default class Interpreter {
   context: Array<Node>
   isGettable: Boolean
   input: Node
+  inside: string
   output: Node
   inputPos: number
   inputNode: Node
@@ -19,9 +20,12 @@ export default class Interpreter {
     this.inputPos = 0
     this.data     = data
 
-    /* Keeps track of what command we're inside of. */
+    /* Keep track of what command we're inside of. */
     this.context = []
     this.inGroup = this.inParam = this.inComponent = false
+
+    /* Keep track of what type of node we're in when walking an expression. */
+    this.inside = ''
 
     /* Signals if an expression needs to be wrapped in an arrow function. */
     this.isGettable = false
@@ -90,9 +94,25 @@ export default class Interpreter {
     let declarator = Node.variableDeclarator(id, call)
     let node: Node = Node.variableDeclaration('var', [declarator])
 
-    this.inComponent = false
+    Object.defineProperty(id, 'referenceType', { value: 'component'})
+    this.pushToStack(id)
 
     this.output.body.push(node)
+
+    if (this.inGroup) {
+      let add = Node.expressionStatement(
+        Node.callExpression(
+          Node.memberExpression(
+            Node.identifier(this.getCurrentContext().id.name),
+            Node.identifier('add')
+          ),
+          [id]
+        )
+      )
+      this.output.body.push(add)
+    }
+
+    this.inComponent = false
   }
 
   convertOptions (options: Array<Node>): Array<Node> {
@@ -221,8 +241,6 @@ export default class Interpreter {
     Object.defineProperty(id, 'referenceType', { value: 'param'})
     this.pushToStack(id)
 
-    this.inParam = false
-
     this.output.body.push(node)
 
     if (this.inGroup) {
@@ -237,6 +255,8 @@ export default class Interpreter {
       )
       this.output.body.push(add)
     }
+
+    this.inParam = false
   }
 
   /* Push node onto scope stack. */
@@ -269,6 +289,8 @@ export default class Interpreter {
         if (id.referenceType === 'param') {
           this.isGettable = true
           return Interpreter.makeIdentifierGettable(expr)
+        } else if (id.referenceType === 'component') {
+          this.isGettable = true
         }
       }
 
@@ -278,10 +300,13 @@ export default class Interpreter {
       return Node.literal(expr.value)
 
       case 'MemberExpression':
-      return Node.memberExpression(
+      this.inside = 'MemberExpression'
+      let node = Node.memberExpression(
         this.walkExpression(expr.object),
         this.walkExpression(expr.property)
       )
+      this.inside = ''
+      return node
 
       default:
       return expr
