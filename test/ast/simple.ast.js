@@ -19,7 +19,6 @@ function paramWidth () {
   return Node.variableDeclaration('var', [declarator])
 }
 
-/* param depth */
 function paramDepth () {
   let properties = []
 
@@ -36,7 +35,22 @@ function paramDepth () {
   return Node.variableDeclaration('var', [declarator])
 }
 
-/* param depth */
+function paramFaceMaterial () {
+  let properties = []
+
+  properties.push(Node.property(Node.identifier('type'), Node.literal('object')))
+  properties.push(Node.property(Node.identifier('source'), Node.literal('materials')))
+  properties.push(Node.property(Node.identifier('name'), Node.literal('faceMaterial')))
+
+  let objectExpression = Node.objectExpression(properties)
+  let parent = Node.identifier('parent')
+  let call = Node.callExpression(Node.identifier('param'), [parent, objectExpression])
+  let id = Node.identifier('faceMaterial')
+  let declarator = Node.variableDeclarator(id, call)
+
+  return Node.variableDeclaration('var', [declarator])
+}
+
 function componentBase () {
   let properties = []
 
@@ -68,6 +82,7 @@ function componentBase () {
 
 node.body.push(paramWidth())
 node.body.push(paramDepth())
+node.body.push(paramFaceMaterial())
 node.body.push(componentBase())
 
 module.exports = node

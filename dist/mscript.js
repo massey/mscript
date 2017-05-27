@@ -6018,6 +6018,10 @@ var Interpreter = function () {
                 case 'ConditionalExpression':
                     return node_1.default.conditionalExpression(this.walkExpression(expr.test), this.walkExpression(expr.consequent), this.walkExpression(expr.alternate));
                 case 'Identifier':
+                    if (expr.name[0] === '$') {
+                        var value = expr.name.substring(1);
+                        return node_1.default.literal(value);
+                    }
                     var id = this.findIdentifier(expr.name);
                     if (id) {
                         if (id.referenceType === 'param') {

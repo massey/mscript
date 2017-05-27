@@ -8,6 +8,11 @@ param depth {
   value: 600
 }
 
+param faceMaterial {
+  type: 'object'
+  source: $materials
+}
+
 component base {
   A: width + 100
   B: depth
