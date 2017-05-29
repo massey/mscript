@@ -68,9 +68,52 @@ function paramHeight () {
   return Node.variableDeclaration('var', [declarator])
 }
 
+function componentBase () {
+  return Node.variableDeclaration(
+    'var',
+    [Node.variableDeclarator(
+      Node.identifier('base'),
+      Node.callExpression(
+        Node.identifier('component'),
+        [
+          Node.identifier('parent'),
+          Node.objectExpression([
+            Node.property(
+              Node.identifier('A'),
+              Node.arrowFunctionExpression(
+                [],
+                Node.binaryExpression(
+                  Node.callExpression(
+                    Node.memberExpression(
+                      Node.identifier('width'),
+                      Node.identifier('get')
+                    )
+                  ),
+                  '-',
+                  Node.callExpression(
+                    Node.memberExpression(
+                      Node.identifier('radius'),
+                      Node.identifier('get')
+                    )
+                  )
+                )
+              )
+            ),
+            Node.property(
+              Node.identifier('name'),
+              Node.literal('base')
+            )
+          ])
+        ]
+      )
+    )]
+  )
+}
+
 node.body.push(parentRadius())
 node.body.push(paramWidth())
 node.body.push(paramDepth())
 node.body.push(paramHeight())
+node.body.push(componentBase())
 
 module.exports = node

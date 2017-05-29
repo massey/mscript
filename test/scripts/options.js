@@ -12,3 +12,8 @@ param height {
   type: 'object'
   accessor: 'foo'
 }
+
+// radius is a param on the parent
+component base {
+  A: width - radius
+}

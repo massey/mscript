@@ -5812,13 +5812,11 @@ var Interpreter = function () {
     _createClass(Interpreter, [{
         key: "compile",
         value: function compile() {
-            // this.inputNode = this.input.body[this.inputPos]
-            //
             this.output = node_1.default.program();
+            this.openScope(this.input);
             if (this.parent) {
                 this.injectParentParams();
             }
-            this.openScope(this.input);
             this.compileNode(this.input);
             return this.output;
         }
@@ -5944,6 +5942,8 @@ var Interpreter = function () {
 
             Interpreter.enumerateParams(this.parent).forEach(function (param) {
                 _this3.output.body.push(node_1.default.variableDeclaration('var', [node_1.default.variableDeclarator(node_1.default.identifier(param.name), node_1.default.memberExpression(node_1.default.identifier('parent'), node_1.default.memberExpression(node_1.default.identifier('params'), node_1.default.literal(param.index))))]));
+                Object.defineProperty(param, 'referenceType', { value: 'param' });
+                _this3.pushToStack(param);
             });
         }
     }, {

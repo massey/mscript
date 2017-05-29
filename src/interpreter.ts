@@ -42,15 +42,13 @@ export default class Interpreter {
 
   // Compile kicks off the interpreter.
   compile (): Node {
-    // this.inputNode = this.input.body[this.inputPos]
-    //
     this.output = Node.program()
+
+    this.openScope(this.input)
 
     if (this.parent) {
       this.injectParentParams()
     }
-
-    this.openScope(this.input)
 
     this.compileNode(this.input)
 
@@ -207,6 +205,9 @@ export default class Interpreter {
           )
         )]
       ))
+
+      Object.defineProperty(param, 'referenceType', { value: 'param'})
+      this.pushToStack(param)
     })
   }
 
