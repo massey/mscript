@@ -10,6 +10,7 @@ export default class Interpreter {
   inputPos: number
   inputNode: Node
   parent: any
+  currentParentName: string
   data:  SavedData
   inAttributes: Boolean
   inComponent: Boolean
@@ -29,6 +30,7 @@ export default class Interpreter {
     /* Keep track of what command we're inside of. */
     this.context = []
     this.inAttributes = this.inGroup = this.inParam = this.inComponent = false
+    this.currentParentName = 'parent'
 
     /* Keep track of what type of node we're in when walking an expression. */
     this.inside = ''
@@ -133,12 +135,10 @@ export default class Interpreter {
 
   component
   (command: Node, details: {id: string, options: Array<Node> }): void {
-    this.inComponent = true
-
     let properties: Array<Node> = this.convertOptions(details.options)
     let name = Node.identifier('name')
     properties.push(Node.property(name, Node.literal(details.id)))
-    let parent = Node.identifier('parent')
+    let parent = Node.identifier(this.currentParentName)
     let optionsObject: Node = Node.objectExpression(properties)
     let call: Node = Node.callExpression('component', [parent, optionsObject])
     let id: Node   = Node.identifier(details.id)
@@ -150,18 +150,20 @@ export default class Interpreter {
 
     this.output.body.push(node)
 
-    if (this.inGroup) {
-      let add = Node.expressionStatement(
-        Node.callExpression(
-          Node.memberExpression(
-            Node.identifier(this.getCurrentContext().id.name),
-            Node.identifier('add')
-          ),
-          [id]
-        )
-      )
-      this.output.body.push(add)
-    }
+    this.inComponent = true
+
+    // if (this.inGroup) {
+    //   let add = Node.expressionStatement(
+    //     Node.callExpression(
+    //       Node.memberExpression(
+    //         Node.identifier(this.getCurrentContext().id.name),
+    //         Node.identifier('add')
+    //       ),
+    //       [id]
+    //     )
+    //   )
+    //   this.output.body.push(add)
+    // }
 
     this.inComponent = false
   }
@@ -170,10 +172,11 @@ export default class Interpreter {
   (command: Node, details: {id: string, options: Array<Node> }): void {
     this.inGroup = true
 
+
     let properties: Array<Node> = this.convertOptions(details.options)
     let name = Node.identifier('name')
     properties.push(Node.property(name, Node.literal(details.id)))
-    let parent = Node.identifier('parent')
+    let parent = Node.identifier(this.currentParentName)
     let optionsObject: Node = Node.objectExpression(properties)
     let call: Node = Node.callExpression('group', [parent, optionsObject])
     let id: Node   = Node.identifier(details.id)
@@ -183,10 +186,13 @@ export default class Interpreter {
     this.output.body.push(node)
 
     this.openScope(command)
+    this.currentParentName = details.id
     if (command.body) this.compileNode(command.body)
     this.closeScope()
+    this.currentParentName = 'parent'
 
     this.inGroup = false
+
 
   }
 
@@ -286,8 +292,6 @@ export default class Interpreter {
 
   param
   (command: Node, details: {id: string, options: Array<Node> }): void {
-    this.inParam = true
-
     let properties: Array<Node> = this.convertOptions(details.options)
 
     if (this.data) {
@@ -303,7 +307,7 @@ export default class Interpreter {
     let name = Node.identifier('name')
     properties.push(Node.property(name, Node.literal(details.id)))
     let optionsObject: Node = Node.objectExpression(properties)
-    let parent = Node.identifier('parent')
+    let parent = Node.identifier(this.currentParentName)
     let call: Node = Node.callExpression('param', [parent, optionsObject])
     let id: Node   = Node.identifier(details.id)
     let declarator = Node.variableDeclarator(id, call)
@@ -314,18 +318,20 @@ export default class Interpreter {
 
     this.output.body.push(node)
 
-    if (this.inGroup) {
-      let add = Node.expressionStatement(
-        Node.callExpression(
-          Node.memberExpression(
-            Node.identifier(this.getCurrentContext().id.name),
-            Node.identifier('add')
-          ),
-          [id]
-        )
-      )
-      this.output.body.push(add)
-    }
+    this.inParam = true
+
+    // if (this.inGroup) {
+    //   let add = Node.expressionStatement(
+    //     Node.callExpression(
+    //       Node.memberExpression(
+    //         Node.identifier(this.getCurrentContext().id.name),
+    //         Node.identifier('add')
+    //       ),
+    //       [id]
+    //     )
+    //   )
+    //   this.output.body.push(add)
+    // }
 
     this.inParam = false
   }

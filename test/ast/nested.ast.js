@@ -21,7 +21,7 @@ function paramFaceMaterial () {
   properties.push(Node.property(Node.identifier('name'), Node.literal('faceMaterial')))
 
   let objectExpression = Node.objectExpression(properties)
-  let parent = Node.identifier('parent')
+  let parent = Node.identifier('all')
   return caller('faceMaterial', 'param', [parent, objectExpression])
 }
 
@@ -33,7 +33,7 @@ function paramBenchtopHeight () {
   properties.push(Node.property(Node.identifier('name'), Node.literal('benchtopHeight')))
 
   let objectExpression = Node.objectExpression(properties)
-  let parent = Node.identifier('parent')
+  let parent = Node.identifier('all')
   return caller('benchtopHeight', 'param', [parent, objectExpression])
 }
 
@@ -57,7 +57,7 @@ function componentBenchtop () {
   properties.push(Node.property(Node.identifier('name'), Node.literal('benchtop')))
 
   let objectExpression = Node.objectExpression(properties)
-  let parent = Node.identifier('parent')
+  let parent = Node.identifier('all')
   return caller('benchtop', 'component', [parent, objectExpression])
 }
 
@@ -77,10 +77,10 @@ function groupAddMember (group, member) {
 
 node.body.push(groupAll())
 node.body.push(paramFaceMaterial())
-node.body.push(groupAddMember('all', 'faceMaterial'))
+// node.body.push(groupAddMember('all', 'faceMaterial'))
 node.body.push(paramBenchtopHeight())
-node.body.push(groupAddMember('all', 'benchtopHeight'))
+// node.body.push(groupAddMember('all', 'benchtopHeight'))
 node.body.push(componentBenchtop())
-node.body.push(groupAddMember('all', 'benchtop'))
+// node.body.push(groupAddMember('all', 'benchtop'))
 
 module.exports = node

@@ -5799,6 +5799,7 @@ var Interpreter = function () {
         /* Keep track of what command we're inside of. */
         this.context = [];
         this.inAttributes = this.inGroup = this.inParam = this.inComponent = false;
+        this.currentParentName = 'parent';
         /* Keep track of what type of node we're in when walking an expression. */
         this.inside = '';
         /* Signals if an expression needs to be wrapped in an arrow function. */
@@ -5897,11 +5898,10 @@ var Interpreter = function () {
     }, {
         key: "component",
         value: function component(command, details) {
-            this.inComponent = true;
             var properties = this.convertOptions(details.options);
             var name = node_1.default.identifier('name');
             properties.push(node_1.default.property(name, node_1.default.literal(details.id)));
-            var parent = node_1.default.identifier('parent');
+            var parent = node_1.default.identifier(this.currentParentName);
             var optionsObject = node_1.default.objectExpression(properties);
             var call = node_1.default.callExpression('component', [parent, optionsObject]);
             var id = node_1.default.identifier(details.id);
@@ -5910,10 +5910,19 @@ var Interpreter = function () {
             Object.defineProperty(id, 'referenceType', { value: 'component' });
             this.pushToStack(id);
             this.output.body.push(node);
-            if (this.inGroup) {
-                var add = node_1.default.expressionStatement(node_1.default.callExpression(node_1.default.memberExpression(node_1.default.identifier(this.getCurrentContext().id.name), node_1.default.identifier('add')), [id]));
-                this.output.body.push(add);
-            }
+            this.inComponent = true;
+            // if (this.inGroup) {
+            //   let add = Node.expressionStatement(
+            //     Node.callExpression(
+            //       Node.memberExpression(
+            //         Node.identifier(this.getCurrentContext().id.name),
+            //         Node.identifier('add')
+            //       ),
+            //       [id]
+            //     )
+            //   )
+            //   this.output.body.push(add)
+            // }
             this.inComponent = false;
         }
     }, {
@@ -5923,7 +5932,7 @@ var Interpreter = function () {
             var properties = this.convertOptions(details.options);
             var name = node_1.default.identifier('name');
             properties.push(node_1.default.property(name, node_1.default.literal(details.id)));
-            var parent = node_1.default.identifier('parent');
+            var parent = node_1.default.identifier(this.currentParentName);
             var optionsObject = node_1.default.objectExpression(properties);
             var call = node_1.default.callExpression('group', [parent, optionsObject]);
             var id = node_1.default.identifier(details.id);
@@ -5931,8 +5940,10 @@ var Interpreter = function () {
             var node = node_1.default.variableDeclaration('var', [declarator]);
             this.output.body.push(node);
             this.openScope(command);
+            this.currentParentName = details.id;
             if (command.body) this.compileNode(command.body);
             this.closeScope();
+            this.currentParentName = 'parent';
             this.inGroup = false;
         }
     }, {
@@ -6024,7 +6035,6 @@ var Interpreter = function () {
     }, {
         key: "param",
         value: function param(command, details) {
-            this.inParam = true;
             var properties = this.convertOptions(details.options);
             if (this.data) {
                 if (this.data.params) {
@@ -6037,7 +6047,7 @@ var Interpreter = function () {
             var name = node_1.default.identifier('name');
             properties.push(node_1.default.property(name, node_1.default.literal(details.id)));
             var optionsObject = node_1.default.objectExpression(properties);
-            var parent = node_1.default.identifier('parent');
+            var parent = node_1.default.identifier(this.currentParentName);
             var call = node_1.default.callExpression('param', [parent, optionsObject]);
             var id = node_1.default.identifier(details.id);
             var declarator = node_1.default.variableDeclarator(id, call);
@@ -6045,10 +6055,19 @@ var Interpreter = function () {
             Object.defineProperty(id, 'referenceType', { value: 'param' });
             this.pushToStack(id);
             this.output.body.push(node);
-            if (this.inGroup) {
-                var add = node_1.default.expressionStatement(node_1.default.callExpression(node_1.default.memberExpression(node_1.default.identifier(this.getCurrentContext().id.name), node_1.default.identifier('add')), [id]));
-                this.output.body.push(add);
-            }
+            this.inParam = true;
+            // if (this.inGroup) {
+            //   let add = Node.expressionStatement(
+            //     Node.callExpression(
+            //       Node.memberExpression(
+            //         Node.identifier(this.getCurrentContext().id.name),
+            //         Node.identifier('add')
+            //       ),
+            //       [id]
+            //     )
+            //   )
+            //   this.output.body.push(add)
+            // }
             this.inParam = false;
         }
         /* Push node onto scope stack. */
