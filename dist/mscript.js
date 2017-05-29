@@ -5954,7 +5954,7 @@ var Interpreter = function () {
             var params = Interpreter.enumerateParams(this.parent);
             if (!params) return;
             params.forEach(function (param) {
-                _this3.output.body.push(node_1.default.variableDeclaration('var', [node_1.default.variableDeclarator(node_1.default.identifier(param.name), node_1.default.memberExpression(node_1.default.memberExpression(node_1.default.identifier('parent'), node_1.default.memberExpression(node_1.default.identifier('parent'), node_1.default.identifier('params'))), node_1.default.literal(0), true))]));
+                _this3.output.body.push(node_1.default.variableDeclaration('var', [node_1.default.variableDeclarator(node_1.default.identifier(param.name), node_1.default.memberExpression(node_1.default.memberExpression(node_1.default.memberExpression(node_1.default.identifier('parent'), node_1.default.identifier('parent')), node_1.default.identifier('params')), node_1.default.literal(0), true))]));
                 Object.defineProperty(param, 'referenceType', { value: 'param' });
                 _this3.pushToStack(param);
             });

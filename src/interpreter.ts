@@ -208,11 +208,11 @@ export default class Interpreter {
           Node.identifier(param.name),
           Node.memberExpression(
             Node.memberExpression(
-              Node.identifier('parent'),
               Node.memberExpression(
                 Node.identifier('parent'),
-                Node.identifier('params')
-              )
+                Node.identifier('parent')
+              ),
+              Node.identifier('params')
             ),
             Node.literal(0),
             true
