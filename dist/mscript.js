@@ -5844,6 +5844,9 @@ var Interpreter = function () {
                 case 'component':
                     this.component(command, details);
                     break;
+                case 'globals':
+                    this.globals(command, details);
+                    break;
                 case 'group':
                     this.group(command, details);
                     break;
@@ -5932,6 +5935,16 @@ var Interpreter = function () {
             return body.filter(function (option) {
                 return option.type === 'LabeledStatement';
             });
+        }
+    }, {
+        key: "globals",
+        value: function globals(command, details) {
+            var properties = this.convertOptions(details.options);
+            var optionsObject = node_1.default.objectExpression(properties);
+            var parent = node_1.default.identifier('parent');
+            var call = node_1.default.callExpression('globals', [parent, optionsObject]);
+            var node = node_1.default.expressionStatement(call);
+            this.output.body.push(node);
         }
     }, {
         key: "group",
@@ -6047,9 +6060,12 @@ var Interpreter = function () {
     }], [{
         key: "analyzeCommand",
         value: function analyzeCommand(command) {
-            var name = command.name.name;
-            var id = command.id.name;
-            var options = command.body.body.filter(function (node) {
+            var name = void 0,
+                id = void 0,
+                options = void 0;
+            name = command.name.name;
+            id = command.id ? command.id.name : null;
+            options = command.body.body.filter(function (node) {
                 return node.type === 'LabeledStatement';
             });
             return {

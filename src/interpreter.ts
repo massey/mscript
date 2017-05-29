@@ -74,6 +74,7 @@ export default class Interpreter {
 
     switch (details.name) {
       case 'component': this.component(command, details); break
+      case 'globals': this.globals(command, details); break
       case 'group': this.group(command, details); break
       case 'param': this.param(command, details); break
       default:
@@ -174,6 +175,18 @@ export default class Interpreter {
     })
   }
 
+  globals
+  (command: Node, details: {options: Array<Node> }): void {
+
+    let properties: Array<Node> = this.convertOptions(details.options)
+    let optionsObject: Node = Node.objectExpression(properties)
+    let parent: Node = Node.identifier('parent')
+    let call: Node = Node.callExpression('globals', [parent, optionsObject])
+    let node: Node = Node.expressionStatement(call)
+
+    this.output.body.push(node)
+  }
+
   group
   (command: Node, details: {id: string, options: Array<Node> }): void {
     this.inGroup = true
@@ -223,7 +236,6 @@ export default class Interpreter {
         let param = this.data.params.find((p: ParamData) => {
           return p.name === details.id
         })
-
 
         Interpreter.modifyParamOptions(properties, param)
       }
@@ -320,9 +332,11 @@ export default class Interpreter {
   /* Static methods */
   static analyzeCommand
   (command: Node): {name: string, id: string, options: Array<Node>} {
-    let name: string = command.name.name
-    let id: string   = command.id.name
-    let options: Array<Node> = command.body.body.filter((node: Node) => {
+    let name: string, id: string, options: Array<Node>
+
+    name = command.name.name
+    id = command.id ? command.id.name : null
+    options = command.body.body.filter((node: Node) => {
       return node.type === 'LabeledStatement'
     })
 
