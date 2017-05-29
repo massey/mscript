@@ -102,7 +102,7 @@ describe('Try some AST equality testing', () => {
     let ast = mscriptAST(input, options)
 
     expect(ast).toEqual(expAST)
-    expect(console.log(mscript(input, options)))
+    expect(mscript(input, options))
   })
 
   test('a script with a group', () => {

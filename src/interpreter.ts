@@ -197,7 +197,11 @@ export default class Interpreter {
   }
 
   injectParentParams () {
-    Interpreter.enumerateParams(this.parent).forEach((param: any) => {
+    let params: Array<any> = Interpreter.enumerateParams(this.parent)
+
+    if (!params) return
+
+    params.forEach((param: any) => {
       this.output.body.push(Node.variableDeclaration(
         'var',
         [Node.variableDeclarator(
@@ -414,7 +418,7 @@ export default class Interpreter {
   }
 
   static enumerateParams
-  (parent: {params: Array<any>, parent?: any}): any {
+  (parent: {params: Array<any>, parent?: any}): Array<any> {
     let result: Array<any> = []
 
     if(!(parent = parent.parent)) {
