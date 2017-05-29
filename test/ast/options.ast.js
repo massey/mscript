@@ -10,7 +10,10 @@ function parentRadius () {
       Node.memberExpression(
         Node.memberExpression(
           Node.identifier('parent'),
-          Node.identifier('params')
+          Node.memberExpression(
+            Node.identifier('parent'),
+            Node.identifier('params')
+          )
         ),
         Node.literal(0),
         true
