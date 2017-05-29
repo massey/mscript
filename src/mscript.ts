@@ -4,9 +4,10 @@ import * as esotope from 'esotope'
 import Node from './node'
 import { SavedData } from './types/massive'
 
-export function transpile (input: string, savedData?: SavedData): string {
+export function transpile
+(input: string, options: {savedData?: SavedData, parent?: any}): string {
   let ast = acorn.parse(input)
-  let i   = new Interpreter(ast as Node, savedData)
+  let i   = new Interpreter(ast as Node, options)
 
   return esotope.generate(i.compile(), {
     format: {
@@ -15,9 +16,10 @@ export function transpile (input: string, savedData?: SavedData): string {
   })
 }
 
-export function interpret (input: string, savedData?: SavedData): Node {
+export function interpret
+(input: string, options: {savedData?: SavedData, parent?: any}): Node {
   let ast = acorn.parse(input)
-  let i   = new Interpreter(ast as Node, savedData)
+  let i   = new Interpreter(ast as Node, options)
 
   return  i.compile()
 }

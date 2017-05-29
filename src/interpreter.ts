@@ -9,6 +9,7 @@ export default class Interpreter {
   output: Node
   inputPos: number
   inputNode: Node
+  parent: any
   data:  SavedData
   inAttributes: Boolean
   inComponent: Boolean
@@ -16,10 +17,14 @@ export default class Interpreter {
   inParam: Boolean
   stack: Array<Array<Node>>
 
-  constructor (ast: Node, data?: SavedData) {
+  constructor (ast: Node, options: {data?: SavedData, parent?: any}) {
     this.input    = ast
     this.inputPos = 0
-    this.data     = data
+
+    if (options) {
+      this.data   = options.data
+      this.parent = options.parent
+    }
 
     /* Keep track of what command we're inside of. */
     this.context = []
@@ -35,10 +40,15 @@ export default class Interpreter {
     this.stack = []
   }
 
+  // Compile kicks off the interpreter.
   compile (): Node {
     // this.inputNode = this.input.body[this.inputPos]
     //
     this.output = Node.program()
+
+    if (this.parent) {
+      this.injectParentParams()
+    }
 
     this.openScope(this.input)
 
@@ -180,6 +190,24 @@ export default class Interpreter {
 
     this.inGroup = false
 
+  }
+
+  injectParentParams () {
+    Interpreter.enumerateParams(this.parent).forEach((param: any) => {
+      this.output.body.push(Node.variableDeclaration(
+        'var',
+        [Node.variableDeclarator(
+          Node.identifier(param.name),
+          Node.memberExpression(
+            Node.identifier('parent'),
+            Node.memberExpression(
+              Node.identifier('params'),
+              Node.literal(param.index)
+            )
+          )
+        )]
+      ))
+    })
   }
 
   convertOptions (options: Array<Node>): Array<Node> {
@@ -375,6 +403,21 @@ export default class Interpreter {
       id,
       options
     }
+  }
+
+  static enumerateParams
+  (parent: {params: Array<any>}): Array<{name: string, index: number}> {
+    let result: Array<{name: string, index: number}> = []
+
+    if(!parent.params) {
+      return
+    }
+
+    parent.params.forEach((param: any, i: number) => {
+      result.push({name: param.name, index: i})
+    })
+
+    return result
   }
 
   static makeIdentifierGettable (id: Node): Node {

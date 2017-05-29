@@ -2,7 +2,22 @@ const Node = require('../../dist/node.js').default
 
 var node = Node.program()
 
-/* param width */
+function parentRadius () {
+  return Node.variableDeclaration(
+    'var',
+    [Node.variableDeclarator(
+      Node.identifier('radius'),
+      Node.memberExpression(
+        Node.identifier('parent'),
+        Node.memberExpression(
+          Node.identifier('params'),
+          Node.literal(0)
+        )
+      )
+    )]
+  )
+}
+
 function paramWidth () {
   let properties = []
 
@@ -53,6 +68,7 @@ function paramHeight () {
   return Node.variableDeclaration('var', [declarator])
 }
 
+node.body.push(parentRadius())
 node.body.push(paramWidth())
 node.body.push(paramDepth())
 node.body.push(paramHeight())

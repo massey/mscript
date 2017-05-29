@@ -63,27 +63,36 @@ describe('Try some AST equality testing', () => {
     expect(mscript(input))
   })
 
-  test('a script transpiled with some saved data', () => {
+  test('a script transpiled with some saved data and a parent', () => {
     let input  = fs.readFileSync(path.resolve(__dirname, './scripts/options.js'), 'utf-8')
     let expAST = require('./ast/options.ast.js')
     let options = {
-      params: [
-        {
-          name: 'width',
-          value: 200
-        },
-        {
-          name: 'depth',
-          value: 'bye'
-        },
-        {
-          name: 'height',
-          accessor: 'bar'
-        }
-      ]
+      data: {
+        params: [
+          {
+            name: 'width',
+            value: 200
+          },
+          {
+            name: 'depth',
+            value: 'bye'
+          },
+          {
+            name: 'height',
+            accessor: 'bar'
+          }
+        ]
+      },
+      parent: {
+        params: [
+          {
+            name: 'radius'
+          }
+        ]
+      }
     }
 
-    let ast    = mscriptAST(input, options)
+    let ast = mscriptAST(input, options)
 
     expect(ast).toEqual(expAST)
     expect(mscript(input, options))

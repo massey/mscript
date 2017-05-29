@@ -5787,12 +5787,15 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var node_1 = __webpack_require__(4);
 
 var Interpreter = function () {
-    function Interpreter(ast, data) {
+    function Interpreter(ast, options) {
         _classCallCheck(this, Interpreter);
 
         this.input = ast;
         this.inputPos = 0;
-        this.data = data;
+        if (options) {
+            this.data = options.data;
+            this.parent = options.parent;
+        }
         /* Keep track of what command we're inside of. */
         this.context = [];
         this.inAttributes = this.inGroup = this.inParam = this.inComponent = false;
@@ -5803,6 +5806,8 @@ var Interpreter = function () {
         /* Identifiers are kept in nested arrays. */
         this.stack = [];
     }
+    // Compile kicks off the interpreter.
+
 
     _createClass(Interpreter, [{
         key: "compile",
@@ -5810,6 +5815,9 @@ var Interpreter = function () {
             // this.inputNode = this.input.body[this.inputPos]
             //
             this.output = node_1.default.program();
+            if (this.parent) {
+                this.injectParentParams();
+            }
             this.openScope(this.input);
             this.compileNode(this.input);
             return this.output;
@@ -5930,13 +5938,22 @@ var Interpreter = function () {
             this.inGroup = false;
         }
     }, {
+        key: "injectParentParams",
+        value: function injectParentParams() {
+            var _this3 = this;
+
+            Interpreter.enumerateParams(this.parent).forEach(function (param) {
+                _this3.output.body.push(node_1.default.variableDeclaration('var', [node_1.default.variableDeclarator(node_1.default.identifier(param.name), node_1.default.memberExpression(node_1.default.identifier('parent'), node_1.default.memberExpression(node_1.default.identifier('params'), node_1.default.literal(param.index))))]));
+            });
+        }
+    }, {
         key: "convertOptions",
         value: function convertOptions(options) {
-            var _this3 = this;
+            var _this4 = this;
 
             var nodes = [];
             options.forEach(function (option) {
-                nodes.push(_this3.convertLabeledStatementToProperty(option));
+                nodes.push(_this4.convertLabeledStatementToProperty(option));
             });
             return nodes;
         }
@@ -6097,6 +6114,18 @@ var Interpreter = function () {
             };
         }
     }, {
+        key: "enumerateParams",
+        value: function enumerateParams(parent) {
+            var result = [];
+            if (!parent.params) {
+                return;
+            }
+            parent.params.forEach(function (param, i) {
+                result.push({ name: param.name, index: i });
+            });
+            return result;
+        }
+    }, {
         key: "makeIdentifierGettable",
         value: function makeIdentifierGettable(id) {
             var prop = node_1.default.identifier('get');
@@ -6139,9 +6168,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var acorn = __webpack_require__(0);
 var interpreter_1 = __webpack_require__(2);
 var esotope = __webpack_require__(1);
-function transpile(input, savedData) {
+function transpile(input, options) {
     var ast = acorn.parse(input);
-    var i = new interpreter_1.default(ast, savedData);
+    var i = new interpreter_1.default(ast, options);
     return esotope.generate(i.compile(), {
         format: {
             semicolons: false
@@ -6149,9 +6178,9 @@ function transpile(input, savedData) {
     });
 }
 exports.transpile = transpile;
-function interpret(input, savedData) {
+function interpret(input, options) {
     var ast = acorn.parse(input);
-    var i = new interpreter_1.default(ast, savedData);
+    var i = new interpreter_1.default(ast, options);
     return i.compile();
 }
 exports.interpret = interpret;
