@@ -6,6 +6,12 @@ export default class Node {
      this.type = type
    }
 
+   static arrayExpression (elements: Array<Node>): Node {
+     let node: Node = new Node('ArrayExpression')
+     node.elements = elements
+     return node
+   }
+
    /* Node factory methods. */
    static arrowFunctionExpression (params: Array<Node>, body: Node): Node {
      let node: Node = new Node('ArrowFunctionExpression')
@@ -79,18 +85,14 @@ export default class Node {
 
    static memberExpression (obj: Node, property: Node): Node {
      let node: Node = new Node('MemberExpression')
-
      node.object = obj
-
      node.property = property
-
      return node
    }
 
    static objectExpression (properties: Array<Node>): Node {
      let node = new Node('ObjectExpression')
      node.properties = properties || []
-
      return node
    }
 

@@ -5795,7 +5795,7 @@ var Interpreter = function () {
         this.data = data;
         /* Keep track of what command we're inside of. */
         this.context = [];
-        this.inGroup = this.inParam = this.inComponent = false;
+        this.inAttributes = this.inGroup = this.inParam = this.inComponent = false;
         /* Keep track of what type of node we're in when walking an expression. */
         this.inside = '';
         /* Signals if an expression needs to be wrapped in an arrow function. */
@@ -5841,11 +5841,11 @@ var Interpreter = function () {
         value: function commandStatement(command) {
             var details = Interpreter.analyzeCommand(command);
             switch (details.name) {
+                case 'attributes':
+                    this.attributes(command, details);
+                    break;
                 case 'component':
                     this.component(command, details);
-                    break;
-                case 'globals':
-                    this.globals(command, details);
                     break;
                 case 'group':
                     this.group(command, details);
@@ -5855,6 +5855,38 @@ var Interpreter = function () {
                     break;
                 default:
             }
+        }
+        //
+        // Commands
+        //
+
+    }, {
+        key: "attribute",
+        value: function attribute(command) {
+            var details = Interpreter.analyzeCommand(command);
+            var properties = this.convertOptions(details.options);
+            properties.unshift(node_1.default.property(node_1.default.identifier('name'), node_1.default.literal(details.name)));
+            var node = node_1.default.objectExpression(properties);
+            return node;
+        }
+    }, {
+        key: "attributes",
+        value: function attributes(command, details) {
+            var _this2 = this;
+
+            var elements = [];
+            command.body.body.forEach(function (n) {
+                elements.push(_this2.attribute(n));
+            });
+            var attributes = node_1.default.arrayExpression(elements);
+            var parent = node_1.default.identifier('parent');
+            var call = node_1.default.callExpression('attributes', [parent, attributes]);
+            var node = node_1.default.expressionStatement(call);
+            this.output.body.push(node);
+            this.openScope(command);
+            if (command.body) this.compileNode(command.body);
+            this.closeScope();
+            this.inAttributes = false;
         }
     }, {
         key: "component",
@@ -5879,13 +5911,32 @@ var Interpreter = function () {
             this.inComponent = false;
         }
     }, {
+        key: "group",
+        value: function group(command, details) {
+            this.inGroup = true;
+            var properties = this.convertOptions(details.options);
+            var name = node_1.default.identifier('name');
+            properties.push(node_1.default.property(name, node_1.default.literal(details.id)));
+            var parent = node_1.default.identifier('parent');
+            var optionsObject = node_1.default.objectExpression(properties);
+            var call = node_1.default.callExpression('group', [parent, optionsObject]);
+            var id = node_1.default.identifier(details.id);
+            var declarator = node_1.default.variableDeclarator(id, call);
+            var node = node_1.default.variableDeclaration('var', [declarator]);
+            this.output.body.push(node);
+            this.openScope(command);
+            if (command.body) this.compileNode(command.body);
+            this.closeScope();
+            this.inGroup = false;
+        }
+    }, {
         key: "convertOptions",
         value: function convertOptions(options) {
-            var _this2 = this;
+            var _this3 = this;
 
             var nodes = [];
             options.forEach(function (option) {
-                nodes.push(_this2.convertLabeledStatementToProperty(option));
+                nodes.push(_this3.convertLabeledStatementToProperty(option));
             });
             return nodes;
         }
@@ -5935,35 +5986,6 @@ var Interpreter = function () {
             return body.filter(function (option) {
                 return option.type === 'LabeledStatement';
             });
-        }
-    }, {
-        key: "globals",
-        value: function globals(command, details) {
-            var properties = this.convertOptions(details.options);
-            var optionsObject = node_1.default.objectExpression(properties);
-            var parent = node_1.default.identifier('parent');
-            var call = node_1.default.callExpression('globals', [parent, optionsObject]);
-            var node = node_1.default.expressionStatement(call);
-            this.output.body.push(node);
-        }
-    }, {
-        key: "group",
-        value: function group(command, details) {
-            this.inGroup = true;
-            var properties = this.convertOptions(details.options);
-            var name = node_1.default.identifier('name');
-            properties.push(node_1.default.property(name, node_1.default.literal(details.id)));
-            var parent = node_1.default.identifier('parent');
-            var optionsObject = node_1.default.objectExpression(properties);
-            var call = node_1.default.callExpression('group', [parent, optionsObject]);
-            var id = node_1.default.identifier(details.id);
-            var declarator = node_1.default.variableDeclarator(id, call);
-            var node = node_1.default.variableDeclaration('var', [declarator]);
-            this.output.body.push(node);
-            this.openScope(command);
-            if (command.body) this.compileNode(command.body);
-            this.closeScope();
-            this.inGroup = false;
         }
     }, {
         key: "openScope",
@@ -6153,10 +6175,17 @@ var Node = function () {
 
         this.type = type;
     }
-    /* Node factory methods. */
-
 
     _createClass(Node, null, [{
+        key: "arrayExpression",
+        value: function arrayExpression(elements) {
+            var node = new Node('ArrayExpression');
+            node.elements = elements;
+            return node;
+        }
+        /* Node factory methods. */
+
+    }, {
         key: "arrowFunctionExpression",
         value: function arrowFunctionExpression(params, body) {
             var node = new Node('ArrowFunctionExpression');

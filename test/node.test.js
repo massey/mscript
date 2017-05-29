@@ -1,5 +1,14 @@
 const Node = require('../dist/node.js').default
 
+test('make an ArrayExpression', () => {
+  let elements = []
+  elements.push(Node.literal('hi'))
+  let a = Node.arrayExpression(elements)
+
+  expect(a.type).toBe('ArrayExpression')
+  expect(a.elements.length).toBe(1)
+})
+
 test('make an arrowFunctionExpression', () => {
   let params = []
   let body   = Node.identifier('test')

@@ -10,6 +10,7 @@ export default class Interpreter {
   inputPos: number
   inputNode: Node
   data:  SavedData
+  inAttributes: Boolean
   inComponent: Boolean
   inGroup: Boolean
   inParam: Boolean
@@ -22,7 +23,7 @@ export default class Interpreter {
 
     /* Keep track of what command we're inside of. */
     this.context = []
-    this.inGroup = this.inParam = this.inComponent = false
+    this.inAttributes = this.inGroup = this.inParam = this.inComponent = false
 
     /* Keep track of what type of node we're in when walking an expression. */
     this.inside = ''
@@ -73,12 +74,53 @@ export default class Interpreter {
     let details = Interpreter.analyzeCommand(command)
 
     switch (details.name) {
+      case 'attributes': this.attributes(command, details); break
       case 'component': this.component(command, details); break
-      case 'globals': this.globals(command, details); break
       case 'group': this.group(command, details); break
       case 'param': this.param(command, details); break
+
       default:
     }
+  }
+
+  //
+  // Commands
+  //
+
+  attribute
+  (command: Node): Node {
+    let details: any = Interpreter.analyzeCommand(command)
+
+    let properties: Array<Node> = this.convertOptions(details.options)
+    properties.unshift(Node.property(
+      Node.identifier('name'),
+      Node.literal(details.name)
+    ))
+
+    let node = Node.objectExpression(properties)
+    return node
+  }
+
+  attributes
+  (command: Node, details: {options: Array<Node> }): void {
+    let elements: Array<Node> = []
+
+    command.body.body.forEach((n: Node) => {
+      elements.push(this.attribute(n))
+    })
+
+    let attributes: Node = Node.arrayExpression(elements)
+    let parent: Node = Node.identifier('parent')
+    let call: Node = Node.callExpression('attributes', [parent, attributes])
+    let node: Node = Node.expressionStatement(call)
+
+    this.output.body.push(node)
+
+    this.openScope(command)
+    if (command.body) this.compileNode(command.body)
+    this.closeScope()
+
+    this.inAttributes = false
   }
 
   component
@@ -114,6 +156,30 @@ export default class Interpreter {
     }
 
     this.inComponent = false
+  }
+
+  group
+  (command: Node, details: {id: string, options: Array<Node> }): void {
+    this.inGroup = true
+
+    let properties: Array<Node> = this.convertOptions(details.options)
+    let name = Node.identifier('name')
+    properties.push(Node.property(name, Node.literal(details.id)))
+    let parent = Node.identifier('parent')
+    let optionsObject: Node = Node.objectExpression(properties)
+    let call: Node = Node.callExpression('group', [parent, optionsObject])
+    let id: Node   = Node.identifier(details.id)
+    let declarator = Node.variableDeclarator(id, call)
+    let node: Node = Node.variableDeclaration('var', [declarator])
+
+    this.output.body.push(node)
+
+    this.openScope(command)
+    if (command.body) this.compileNode(command.body)
+    this.closeScope()
+
+    this.inGroup = false
+
   }
 
   convertOptions (options: Array<Node>): Array<Node> {
@@ -173,42 +239,6 @@ export default class Interpreter {
     return body.filter((option: Node) => {
       return option.type === 'LabeledStatement'
     })
-  }
-
-  globals
-  (command: Node, details: {options: Array<Node> }): void {
-
-    let properties: Array<Node> = this.convertOptions(details.options)
-    let optionsObject: Node = Node.objectExpression(properties)
-    let parent: Node = Node.identifier('parent')
-    let call: Node = Node.callExpression('globals', [parent, optionsObject])
-    let node: Node = Node.expressionStatement(call)
-
-    this.output.body.push(node)
-  }
-
-  group
-  (command: Node, details: {id: string, options: Array<Node> }): void {
-    this.inGroup = true
-
-    let properties: Array<Node> = this.convertOptions(details.options)
-    let name = Node.identifier('name')
-    properties.push(Node.property(name, Node.literal(details.id)))
-    let parent = Node.identifier('parent')
-    let optionsObject: Node = Node.objectExpression(properties)
-    let call: Node = Node.callExpression('group', [parent, optionsObject])
-    let id: Node   = Node.identifier(details.id)
-    let declarator = Node.variableDeclarator(id, call)
-    let node: Node = Node.variableDeclaration('var', [declarator])
-
-    this.output.body.push(node)
-
-    this.openScope(command)
-    if (command.body) this.compileNode(command.body)
-    this.closeScope()
-
-    this.inGroup = false
-
   }
 
   openScope (context: Node): void {

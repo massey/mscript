@@ -107,10 +107,10 @@ describe('Try some AST equality testing', () => {
     expect(mscript(input))
   })
 
-  test('a script with some globals', () => {
-    let input  = fs.readFileSync(path.resolve(__dirname, './scripts/globals.js'), 'utf-8')
+  test('a script with some attributes', () => {
+    let input  = fs.readFileSync(path.resolve(__dirname, './scripts/attributes.js'), 'utf-8')
     let ast    = mscriptAST(input)
-    let expAST = require('./ast/globals.ast.js')
+    let expAST = require('./ast/attributes.ast.js')
 
     expect(ast).toEqual(expAST)
     expect(mscript(input))
