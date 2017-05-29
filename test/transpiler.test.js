@@ -86,16 +86,23 @@ describe('Try some AST equality testing', () => {
       parent: {
         params: [
           {
-            name: 'radius'
+            name: 'test'
           }
-        ]
+        ],
+        parent: {
+          params: [
+            {
+              name: 'radius'
+            }
+          ]
+        }
       }
     }
 
     let ast = mscriptAST(input, options)
 
     expect(ast).toEqual(expAST)
-    expect(mscript(input, options))
+    expect(console.log(mscript(input, options)))
   })
 
   test('a script with a group', () => {

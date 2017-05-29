@@ -8,11 +8,12 @@ function parentRadius () {
     [Node.variableDeclarator(
       Node.identifier('radius'),
       Node.memberExpression(
-        Node.identifier('parent'),
         Node.memberExpression(
-          Node.identifier('params'),
-          Node.literal(0)
-        )
+          Node.identifier('parent'),
+          Node.identifier('params')
+        ),
+        Node.literal(0),
+        true
       )
     )]
   )

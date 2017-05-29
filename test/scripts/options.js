@@ -13,7 +13,7 @@ param height {
   accessor: 'foo'
 }
 
-// radius is a param on the parent
+// radius is a param on the parent's parent
 component base {
   A: width - radius
 }

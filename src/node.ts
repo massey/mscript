@@ -83,10 +83,11 @@ export default class Node {
      return node
    }
 
-   static memberExpression (obj: Node, property: Node): Node {
+   static memberExpression (obj: Node, property: Node, computed?: Boolean): Node {
      let node: Node = new Node('MemberExpression')
      node.object = obj
      node.property = property
+     node.computed = false || computed
      return node
    }
 

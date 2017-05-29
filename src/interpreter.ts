@@ -203,11 +203,12 @@ export default class Interpreter {
         [Node.variableDeclarator(
           Node.identifier(param.name),
           Node.memberExpression(
-            Node.identifier('parent'),
             Node.memberExpression(
-              Node.identifier('params'),
-              Node.literal(param.index)
-            )
+              Node.identifier('parent'),
+              Node.identifier('params')
+            ),
+            Node.literal(0),
+            true
           )
         )]
       ))
@@ -413,10 +414,10 @@ export default class Interpreter {
   }
 
   static enumerateParams
-  (parent: {params: Array<any>}): Array<{name: string, index: number}> {
-    let result: Array<{name: string, index: number}> = []
+  (parent: {params: Array<any>, parent?: any}): any {
+    let result: Array<any> = []
 
-    if(!parent.params) {
+    if(!(parent = parent.parent)) {
       return
     }
 
