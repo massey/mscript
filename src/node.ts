@@ -6,9 +6,9 @@ export default class Node {
      this.type = type
    }
 
-   static arrayExpression (elements: Array<Node>): Node {
+   static arrayExpression (elements?: Array<Node>): Node {
      let node: Node = new Node('ArrayExpression')
-     node.elements = elements
+     node.elements = elements || []
      return node
    }
 
@@ -18,8 +18,8 @@ export default class Node {
 
      node.left     = left
      node.operator = operator
-     node.right    = left
-     
+     node.right    = right
+
      return node
    }
 

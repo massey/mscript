@@ -6058,18 +6058,6 @@ var Interpreter = function () {
             this.pushToStack(id);
             this.output.body.push(node);
             this.inParam = true;
-            // if (this.inGroup) {
-            //   let add = Node.expressionStatement(
-            //     Node.callExpression(
-            //       Node.memberExpression(
-            //         Node.identifier(this.getCurrentContext().id.name),
-            //         Node.identifier('add')
-            //       ),
-            //       [id]
-            //     )
-            //   )
-            //   this.output.body.push(add)
-            // }
             this.inParam = false;
         }
         /* Push node onto scope stack. */
@@ -6085,7 +6073,15 @@ var Interpreter = function () {
     }, {
         key: "walkExpression",
         value: function walkExpression(expr) {
+            var _this6 = this;
+
             switch (expr.type) {
+                case 'ArrayExpression':
+                    var elements = [];
+                    expr.elements.forEach(function (el) {
+                        elements.push(_this6.walkExpression(el));
+                    });
+                    return node_1.default.arrayExpression(elements);
                 case 'BinaryExpression':
                     return node_1.default.binaryExpression(this.walkExpression(expr.left), expr.operator, this.walkExpression(expr.right));
                 case 'ConditionalExpression':
@@ -6230,7 +6226,7 @@ var Node = function () {
         key: "arrayExpression",
         value: function arrayExpression(elements) {
             var node = new Node('ArrayExpression');
-            node.elements = elements;
+            node.elements = elements || [];
             return node;
         }
     }, {
@@ -6239,7 +6235,7 @@ var Node = function () {
             var node = new Node('AssignmentExpression');
             node.left = left;
             node.operator = operator;
-            node.right = left;
+            node.right = right;
             return node;
         }
         /* Node factory methods. */

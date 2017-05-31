@@ -332,19 +332,6 @@ export default class Interpreter {
 
     this.inParam = true
 
-    // if (this.inGroup) {
-    //   let add = Node.expressionStatement(
-    //     Node.callExpression(
-    //       Node.memberExpression(
-    //         Node.identifier(this.getCurrentContext().id.name),
-    //         Node.identifier('add')
-    //       ),
-    //       [id]
-    //     )
-    //   )
-    //   this.output.body.push(add)
-    // }
-
     this.inParam = false
   }
 
@@ -358,6 +345,14 @@ export default class Interpreter {
   walkExpression (expr: Node): Node {
 
     switch (expr.type) {
+      case 'ArrayExpression':
+      let elements: Array<Node> = []
+      expr.elements.forEach((el: Node) => {
+        elements.push(this.walkExpression(el))
+      })
+
+      return Node.arrayExpression(elements)
+
       case 'BinaryExpression':
       return Node.binaryExpression(
         this.walkExpression(expr.left),
