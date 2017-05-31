@@ -6087,9 +6087,6 @@ var Interpreter = function () {
                 case 'ConditionalExpression':
                     return node_1.default.conditionalExpression(this.walkExpression(expr.test), this.walkExpression(expr.consequent), this.walkExpression(expr.alternate));
                 case 'Identifier':
-                    if (expr.name[0] === '$') {
-                        return node_1.default.literal(expr.name);
-                    }
                     var id = this.findIdentifier(expr.name);
                     if (id) {
                         if (id.referenceType === 'param') {

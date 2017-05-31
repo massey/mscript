@@ -10,7 +10,7 @@ param depth {
 
 param faceMaterial {
   type: 'object'
-  source: $materials
+  source: materials
 }
 
 component base {

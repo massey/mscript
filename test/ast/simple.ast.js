@@ -43,7 +43,7 @@ function paramFaceMaterial () {
   let properties = []
 
   properties.push(Node.property(Node.identifier('type'), Node.literal('object')))
-  properties.push(Node.property(Node.identifier('source'), Node.literal('$materials')))
+  properties.push(Node.property(Node.identifier('source'), Node.identifier('materials')))
   properties.push(Node.property(Node.identifier('name'), Node.literal('faceMaterial')))
 
   let objectExpression = Node.objectExpression(properties)

@@ -138,6 +138,6 @@ describe('Try some AST equality testing', () => {
     let expAST = require('./ast/meta.ast.js')
 
     expect(ast).toEqual(expAST)
-    expect(console.log(mscript(input)))
+    expect(mscript(input))
   })
 })

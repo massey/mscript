@@ -368,10 +368,6 @@ export default class Interpreter {
       )
 
       case 'Identifier':
-      if (expr.name[0] === '$') {
-        return Node.literal(expr.name)
-      }
-
       let id = this.findIdentifier(expr.name)
       if (id) {
         if (id.referenceType === 'param') {
