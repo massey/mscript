@@ -87,6 +87,7 @@ export default class Interpreter {
       case 'attributes': this.attributes(command, details); break
       case 'component': this.component(command, details); break
       case 'group': this.group(command, details); break
+      case 'meta': this.meta(command, details); break
       case 'param': this.param(command, details); break
 
       default:
@@ -152,19 +153,6 @@ export default class Interpreter {
 
     this.inComponent = true
 
-    // if (this.inGroup) {
-    //   let add = Node.expressionStatement(
-    //     Node.callExpression(
-    //       Node.memberExpression(
-    //         Node.identifier(this.getCurrentContext().id.name),
-    //         Node.identifier('add')
-    //       ),
-    //       [id]
-    //     )
-    //   )
-    //   this.output.body.push(add)
-    // }
-
     this.inComponent = false
   }
 
@@ -192,8 +180,24 @@ export default class Interpreter {
     this.currentParentName = 'parent'
 
     this.inGroup = false
+  }
 
-
+  meta
+  (command: Node, details: {id: string, options: Array<Node> }): void {
+    details.options.forEach((option: any) => {
+      this.output.body.push(
+        Node.expressionStatement(
+          Node.assignmentExpression(
+            Node.memberExpression(
+              Node.identifier('parent'),
+              Node.identifier(option.label.name)
+            ),
+            '=',
+            this.walkExpression(option.body.expression)
+          )
+        )
+      )
+    })
   }
 
   injectParentParams () {

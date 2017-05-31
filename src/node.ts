@@ -12,6 +12,17 @@ export default class Node {
      return node
    }
 
+   static assignmentExpression
+   (left: Node, operator: string, right: Node): Node {
+     let node: Node = new Node('AssignmentExpression')
+
+     node.left     = left
+     node.operator = operator
+     node.right    = left
+     
+     return node
+   }
+
    /* Node factory methods. */
    static arrowFunctionExpression (params: Array<Node>, body: Node): Node {
      let node: Node = new Node('ArrowFunctionExpression')

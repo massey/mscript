@@ -5857,6 +5857,9 @@ var Interpreter = function () {
                 case 'group':
                     this.group(command, details);
                     break;
+                case 'meta':
+                    this.meta(command, details);
+                    break;
                 case 'param':
                     this.param(command, details);
                     break;
@@ -5911,18 +5914,6 @@ var Interpreter = function () {
             this.pushToStack(id);
             this.output.body.push(node);
             this.inComponent = true;
-            // if (this.inGroup) {
-            //   let add = Node.expressionStatement(
-            //     Node.callExpression(
-            //       Node.memberExpression(
-            //         Node.identifier(this.getCurrentContext().id.name),
-            //         Node.identifier('add')
-            //       ),
-            //       [id]
-            //     )
-            //   )
-            //   this.output.body.push(add)
-            // }
             this.inComponent = false;
         }
     }, {
@@ -5947,26 +5938,35 @@ var Interpreter = function () {
             this.inGroup = false;
         }
     }, {
+        key: "meta",
+        value: function meta(command, details) {
+            var _this3 = this;
+
+            details.options.forEach(function (option) {
+                _this3.output.body.push(node_1.default.expressionStatement(node_1.default.assignmentExpression(node_1.default.memberExpression(node_1.default.identifier('parent'), node_1.default.identifier(option.label.name)), '=', _this3.walkExpression(option.body.expression))));
+            });
+        }
+    }, {
         key: "injectParentParams",
         value: function injectParentParams() {
-            var _this3 = this;
+            var _this4 = this;
 
             var params = Interpreter.enumerateParams(this.parent);
             if (!params) return;
             params.forEach(function (param) {
-                _this3.output.body.push(node_1.default.variableDeclaration('var', [node_1.default.variableDeclarator(node_1.default.identifier(param.name), node_1.default.memberExpression(node_1.default.memberExpression(node_1.default.memberExpression(node_1.default.identifier('parent'), node_1.default.identifier('parent')), node_1.default.identifier('params')), node_1.default.literal(0), true))]));
+                _this4.output.body.push(node_1.default.variableDeclaration('var', [node_1.default.variableDeclarator(node_1.default.identifier(param.name), node_1.default.memberExpression(node_1.default.memberExpression(node_1.default.memberExpression(node_1.default.identifier('parent'), node_1.default.identifier('parent')), node_1.default.identifier('params')), node_1.default.literal(0), true))]));
                 Object.defineProperty(param, 'referenceType', { value: 'param' });
-                _this3.pushToStack(param);
+                _this4.pushToStack(param);
             });
         }
     }, {
         key: "convertOptions",
         value: function convertOptions(options) {
-            var _this4 = this;
+            var _this5 = this;
 
             var nodes = [];
             options.forEach(function (option) {
-                nodes.push(_this4.convertLabeledStatementToProperty(option));
+                nodes.push(_this5.convertLabeledStatementToProperty(option));
             });
             return nodes;
         }
@@ -6231,6 +6231,15 @@ var Node = function () {
         value: function arrayExpression(elements) {
             var node = new Node('ArrayExpression');
             node.elements = elements;
+            return node;
+        }
+    }, {
+        key: "assignmentExpression",
+        value: function assignmentExpression(left, operator, right) {
+            var node = new Node('AssignmentExpression');
+            node.left = left;
+            node.operator = operator;
+            node.right = left;
             return node;
         }
         /* Node factory methods. */

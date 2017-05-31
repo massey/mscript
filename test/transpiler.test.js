@@ -131,4 +131,13 @@ describe('Try some AST equality testing', () => {
     expect(ast).toEqual(expAST)
     expect(mscript(input))
   })
+
+  test('a script with a meta command', () => {
+    let input  = fs.readFileSync(path.resolve(__dirname, './scripts/meta.js'), 'utf-8')
+    let ast    = mscriptAST(input)
+    let expAST = require('./ast/meta.ast.js')
+
+    expect(ast).toEqual(expAST)
+    expect(console.log(mscript(input)))
+  })
 })
