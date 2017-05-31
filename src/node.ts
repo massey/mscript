@@ -98,7 +98,7 @@ export default class Node {
      let node: Node = new Node('MemberExpression')
      node.object = obj
      node.property = property
-     node.computed = false || computed
+     node.computed = computed ? true : false
      return node
    }
 

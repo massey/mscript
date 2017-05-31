@@ -387,7 +387,8 @@ export default class Interpreter {
       this.inside = 'MemberExpression'
       let node = Node.memberExpression(
         this.walkExpression(expr.object),
-        this.walkExpression(expr.property)
+        this.walkExpression(expr.property),
+        expr.computed
       )
       this.inside = ''
       return node

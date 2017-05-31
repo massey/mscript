@@ -6101,7 +6101,7 @@ var Interpreter = function () {
                     return node_1.default.literal(expr.value);
                 case 'MemberExpression':
                     this.inside = 'MemberExpression';
-                    var node = node_1.default.memberExpression(this.walkExpression(expr.object), this.walkExpression(expr.property));
+                    var node = node_1.default.memberExpression(this.walkExpression(expr.object), this.walkExpression(expr.property), expr.computed);
                     this.inside = '';
                     return node;
                 default:
@@ -6305,7 +6305,7 @@ var Node = function () {
             var node = new Node('MemberExpression');
             node.object = obj;
             node.property = property;
-            node.computed = false || computed;
+            node.computed = computed ? true : false;
             return node;
         }
     }, {
