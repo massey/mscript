@@ -440,6 +440,9 @@ export default class Interpreter {
     return node
   }
 
+  /**
+   * Make an option's value equal to the saved parameter's value.
+   */
   static modifyParamOptions
   (options: Array<Node>, savedParam: ParamData) {
     if (savedParam.value) {
@@ -453,7 +456,15 @@ export default class Interpreter {
       let option = options.find(o => {
         return o.key.name === 'accessor'
       })
-      option.value.value = savedParam.accessor
+
+      if (option) {
+        option.value.value = savedParam.accessor
+      } else {
+        options.push(Node.property(
+          Node.identifier('accessor'),
+          Node.literal(savedParam.accessor)
+        ))
+      }
     }
   }
 }

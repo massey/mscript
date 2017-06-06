@@ -6148,6 +6148,10 @@ var Interpreter = function () {
             var node = node_1.default.callExpression(me);
             return node;
         }
+        /**
+         * Make an option's value equal to the saved parameter's value.
+         */
+
     }, {
         key: "modifyParamOptions",
         value: function modifyParamOptions(options, savedParam) {
@@ -6161,7 +6165,11 @@ var Interpreter = function () {
                 var _option = options.find(function (o) {
                     return o.key.name === 'accessor';
                 });
-                _option.value.value = savedParam.accessor;
+                if (_option) {
+                    _option.value.value = savedParam.accessor;
+                } else {
+                    options.push(node_1.default.property(node_1.default.identifier('accessor'), node_1.default.literal(savedParam.accessor)));
+                }
             }
         }
     }]);
