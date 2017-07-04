@@ -137,7 +137,7 @@ export default class Interpreter {
   component
   (command: Node, details: {id: string, options: Array<Node> }): void {
     this.inComponent = true
-    
+
     let properties: Array<Node> = this.convertOptions(details.options)
     let isProductComponent = properties.find((prop: Node) => {
       return prop.key.name === 'code'
@@ -160,7 +160,7 @@ export default class Interpreter {
     if (isProductComponent) {
       node =  Node.expressionStatement(call)
     } else {
-      let id: Node   = Node.identifier(details.id)
+      let id: Node = Node.identifier(details.id)
       node = Node.variableDeclaration(
         'var', [
           Node.variableDeclarator(id, call)
@@ -174,10 +174,6 @@ export default class Interpreter {
     this.output.body.push(node)
 
     this.inComponent = false
-  }
-
-  componentWithProduct (details: {id: string, options: Array<Node> }): void {
-
   }
 
   group
