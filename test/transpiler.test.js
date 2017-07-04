@@ -141,3 +141,14 @@ describe('Try some AST equality testing', () => {
     expect(mscript(input))
   })
 })
+
+describe('component command', () => {
+  test('component that is a product', () => {
+    let input  = fs.readFileSync(path.resolve(__dirname, './scripts/component-product.js'), 'utf-8')
+    let ast    = mscriptAST(input)
+    console.log(ast)
+    let expAST = require('./ast/component-product.ast.js')
+
+    expect(ast).toEqual(expAST)
+  })
+})

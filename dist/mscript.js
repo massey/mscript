@@ -5901,21 +5901,31 @@ var Interpreter = function () {
     }, {
         key: "component",
         value: function component(command, details) {
-            var properties = this.convertOptions(details.options);
-            var name = node_1.default.identifier('name');
-            properties.push(node_1.default.property(name, node_1.default.literal(details.id)));
-            var parent = node_1.default.identifier(this.currentParentName);
-            var optionsObject = node_1.default.objectExpression(properties);
-            var call = node_1.default.callExpression('component', [parent, optionsObject]);
-            var id = node_1.default.identifier(details.id);
-            var declarator = node_1.default.variableDeclarator(id, call);
-            var node = node_1.default.variableDeclaration('var', [declarator]);
-            Object.defineProperty(id, 'referenceType', { value: 'component' });
-            this.pushToStack(id);
-            this.output.body.push(node);
             this.inComponent = true;
+            var properties = this.convertOptions(details.options);
+            var isProductComponent = properties.find(function (prop) {
+                return prop.key.name === 'code';
+            });
+            if (details.id) {
+                var name = node_1.default.identifier('name');
+                properties.push(node_1.default.property(name, node_1.default.literal(details.id)));
+            }
+            var call = node_1.default.callExpression('component', [node_1.default.identifier(this.currentParentName), node_1.default.objectExpression(properties)]);
+            var node = void 0;
+            if (isProductComponent) {
+                node = node_1.default.expressionStatement(call);
+            } else {
+                var id = node_1.default.identifier(details.id);
+                node = node_1.default.variableDeclaration('var', [node_1.default.variableDeclarator(id, call)]);
+                Object.defineProperty(id, 'referenceType', { value: 'component' });
+                this.pushToStack(id);
+            }
+            this.output.body.push(node);
             this.inComponent = false;
         }
+    }, {
+        key: "componentWithProduct",
+        value: function componentWithProduct(details) {}
     }, {
         key: "group",
         value: function group(command, details) {

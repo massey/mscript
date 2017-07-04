@@ -136,24 +136,48 @@ export default class Interpreter {
 
   component
   (command: Node, details: {id: string, options: Array<Node> }): void {
+    this.inComponent = true
+    
     let properties: Array<Node> = this.convertOptions(details.options)
-    let name = Node.identifier('name')
-    properties.push(Node.property(name, Node.literal(details.id)))
-    let parent = Node.identifier(this.currentParentName)
-    let optionsObject: Node = Node.objectExpression(properties)
-    let call: Node = Node.callExpression('component', [parent, optionsObject])
-    let id: Node   = Node.identifier(details.id)
-    let declarator = Node.variableDeclarator(id, call)
-    let node: Node = Node.variableDeclaration('var', [declarator])
+    let isProductComponent = properties.find((prop: Node) => {
+      return prop.key.name === 'code'
+    })
 
-    Object.defineProperty(id, 'referenceType', { value: 'component'})
-    this.pushToStack(id)
+    if (details.id) {
+      let name = Node.identifier('name')
+      properties.push(Node.property(name, Node.literal(details.id)))
+    }
+
+    let call = Node.callExpression(
+      'component',
+      [
+        Node.identifier(this.currentParentName),
+        Node.objectExpression(properties)
+      ]
+    )
+
+    let node
+    if (isProductComponent) {
+      node =  Node.expressionStatement(call)
+    } else {
+      let id: Node   = Node.identifier(details.id)
+      node = Node.variableDeclaration(
+        'var', [
+          Node.variableDeclarator(id, call)
+        ]
+      )
+
+      Object.defineProperty(id, 'referenceType', { value: 'component'})
+      this.pushToStack(id)
+    }
 
     this.output.body.push(node)
 
-    this.inComponent = true
-
     this.inComponent = false
+  }
+
+  componentWithProduct (details: {id: string, options: Array<Node> }): void {
+
   }
 
   group
