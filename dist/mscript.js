@@ -5924,9 +5924,6 @@ var Interpreter = function () {
             this.inComponent = false;
         }
     }, {
-        key: "componentWithProduct",
-        value: function componentWithProduct(details) {}
-    }, {
         key: "group",
         value: function group(command, details) {
             this.inGroup = true;
@@ -6200,22 +6197,35 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var acorn = __webpack_require__(0);
 var interpreter_1 = __webpack_require__(2);
 var esotope = __webpack_require__(1);
-function transpile(input, options) {
-    var ast = acorn.parse(input);
-    var i = new interpreter_1.default(ast, options);
-    return esotope.generate(i.compile(), {
-        format: {
-            semicolons: false
-        }
-    });
-}
-exports.transpile = transpile;
+// export function transpile
+// (input: string, options: {savedData?: SavedData, parent?: any}): string {
+//   let ast = acorn.parse(input)
+//   let i   = new Interpreter(ast as Node, options)
+//
+//   return esotope.generate(i.compile(), {
+//     format: {
+//       semicolons: false
+//     }
+//   })
+// }
 function interpret(input, options) {
     var ast = acorn.parse(input);
     var i = new interpreter_1.default(ast, options);
     return i.compile();
 }
 exports.interpret = interpret;
+function transpile(input, options) {
+    var ast = acorn.parse(input);
+    var i = new interpreter_1.default(ast, options);
+    return i.compile();
+}
+exports.transpile = transpile;
+function generate(ast) {
+    return esotope.generate(ast, {
+        semicolons: false
+    });
+}
+exports.generate = generate;
 
 /***/ }),
 /* 4 */

@@ -32,5 +32,7 @@ export function transpile (input: string, options: {savedData?: SavedData, paren
 }
 
 export function generate (ast: Node): string {
-  return esotope.generate(ast)
+  return esotope.generate(ast, {
+    semicolons: false
+  })
 }
