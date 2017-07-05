@@ -4,17 +4,17 @@ import * as esotope from 'esotope'
 import Node from './node'
 import { SavedData } from './types/massive'
 
-export function transpile
-(input: string, options: {savedData?: SavedData, parent?: any}): string {
-  let ast = acorn.parse(input)
-  let i   = new Interpreter(ast as Node, options)
-
-  return esotope.generate(i.compile(), {
-    format: {
-      semicolons: false
-    }
-  })
-}
+// export function transpile
+// (input: string, options: {savedData?: SavedData, parent?: any}): string {
+//   let ast = acorn.parse(input)
+//   let i   = new Interpreter(ast as Node, options)
+//
+//   return esotope.generate(i.compile(), {
+//     format: {
+//       semicolons: false
+//     }
+//   })
+// }
 
 export function interpret
 (input: string, options: {savedData?: SavedData, parent?: any}): Node {
@@ -24,15 +24,13 @@ export function interpret
   return  i.compile()
 }
 
-export const mscript = {
-  transpile (input: string, options: {savedData?: SavedData, parent?: any}): Node {
-    let ast = acorn.parse(input)
-    let i   = new Interpreter(ast as Node, options)
+export function transpile (input: string, options: {savedData?: SavedData, parent?: any}): Node {
+  let ast = acorn.parse(input)
+  let i   = new Interpreter(ast as Node, options)
 
-    return i.compile()
-  },
+  return i.compile()
+}
 
-  generate (ast: Node): string {
-    return esotope.generate(ast)
-  }
+export function generate (ast: Node): string {
+  return esotope.generate(ast)
 }
