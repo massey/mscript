@@ -23,3 +23,16 @@ export function interpret
 
   return  i.compile()
 }
+
+export default {
+  transpile (input: string, options: {savedData?: SavedData, parent?: any}): Node {
+    let ast = acorn.parse(input)
+    let i   = new Interpreter(ast as Node, options)
+
+    return i.compile()
+  },
+
+  generate (ast: Node): string {
+    return esotope.generate(ast)
+  }
+}
