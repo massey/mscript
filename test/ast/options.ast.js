@@ -10,7 +10,7 @@ function parentRadius () {
       Node.memberExpression(
         Node.memberExpression(
           Node.memberExpression(
-            Node.identifier('parent'),
+            Node.identifier('object'),
             Node.identifier('parent')
           ),
           Node.identifier('params')
@@ -30,8 +30,8 @@ function paramWidth () {
   properties.push(Node.property(Node.identifier('name'), Node.literal('width')))
 
   let objectExpression = Node.objectExpression(properties)
-  let parent = Node.identifier('parent')
-  let call = Node.callExpression(Node.identifier('param'), [parent, objectExpression])
+  let object = Node.identifier('object')
+  let call = Node.callExpression(Node.identifier('param'), [object, objectExpression])
   let id = Node.identifier('width')
   let declarator = Node.variableDeclarator(id, call)
 
@@ -47,8 +47,8 @@ function paramDepth () {
   properties.push(Node.property(Node.identifier('name'), Node.literal('depth')))
 
   let objectExpression = Node.objectExpression(properties)
-  let parent = Node.identifier('parent')
-  let call = Node.callExpression(Node.identifier('param'), [parent, objectExpression])
+  let object = Node.identifier('object')
+  let call = Node.callExpression(Node.identifier('param'), [object, objectExpression])
   let id = Node.identifier('depth')
   let declarator = Node.variableDeclarator(id, call)
 
@@ -64,8 +64,8 @@ function paramHeight () {
   properties.push(Node.property(Node.identifier('name'), Node.literal('height')))
 
   let objectExpression = Node.objectExpression(properties)
-  let parent = Node.identifier('parent')
-  let call = Node.callExpression(Node.identifier('param'), [parent, objectExpression])
+  let object = Node.identifier('object')
+  let call = Node.callExpression(Node.identifier('param'), [object, objectExpression])
   let id = Node.identifier('height')
   let declarator = Node.variableDeclarator(id, call)
 
@@ -80,7 +80,7 @@ function componentBase () {
       Node.callExpression(
         Node.identifier('component'),
         [
-          Node.identifier('parent'),
+          Node.identifier('object'),
           Node.objectExpression([
             Node.property(
               Node.identifier('A'),

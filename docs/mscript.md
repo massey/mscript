@@ -19,6 +19,17 @@ by a block that contains one or more options.  The options are essentially
 javascript labelled statements.  Note there are no commas separating the
 options. This is because the block is not an object literal.
 
+### Scripts and Scope
+
+Scripts define how a particular object is built.  Scripts can build jobs or
+units.  A job can have parameters and groups defined.  Units have parameters,
+components, attributes and groups defined.
+
+When a Unit script is evaluated, any Job parameters will be in scope of the
+script.  If any parameters are declared in the script with the same name as
+a Job parameter, that parameter will override the Job parameter.  This may lead
+to unexpected results.
+
 ### Components
 
 A component command must take one of the two following forms.  The first form
@@ -51,3 +62,7 @@ component {
 
 If subsequent component commands refer to the same product code, any existing
 products will have their quantity updated.
+
+### Parameters
+
+Parameters must be unique on an object.  

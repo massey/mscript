@@ -1,19 +1,20 @@
-param width {
-  type: 'number'
-  value: 100
-}
+// This ouptput is affected by data provided when the original mscript was
+// transpiled.  See the options object in the test.
 
-param depth {
-  type: 'string'
-  value: 'hi'
-}
+var radius = object.parent.params[0]
 
-param height {
-  type: 'object'
-  accessor: 'foo'
-}
+var width = param({
+  type: 'number',
+  value: 200,
+  name: 'width'
+})
 
-// radius is a param on the parent's parent
-component base {
-  A: width - radius
-}
+var msg = param({
+  type: 'string',
+  value: 'bye',
+  name: 'msg'
+})
+
+var base = component(object, {
+  A: () => width.get() - radius.get()
+})

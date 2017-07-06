@@ -22,7 +22,7 @@ function globals () {
   )
 
   let attributes = Node.arrayExpression(elements)
-  let parent = Node.identifier('parent')
+  let parent = Node.identifier('object')
   let call = Node.callExpression('attributes', [parent, attributes])
 
   return Node.expressionStatement(call)

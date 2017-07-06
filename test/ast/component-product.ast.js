@@ -1,7 +1,7 @@
 /*
 Expected transpiled code result:
 
-component(parent, {
+component(object, {
   code: '00.000',
   quantity: 4
 })
@@ -16,7 +16,7 @@ function component () {
     Node.callExpression(
       Node.identifier('component'),
       [
-        Node.identifier('parent'),
+        Node.identifier('object'),
         Node.objectExpression([
           Node.property(Node.identifier('code'), Node.literal('00.000')),
           Node.property(Node.identifier('quantity'), Node.literal(4)),

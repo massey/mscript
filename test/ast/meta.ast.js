@@ -6,7 +6,7 @@ function groups () {
   return Node.expressionStatement(
     Node.assignmentExpression(
       Node.memberExpression(
-        Node.identifier('parent'),
+        Node.identifier('object'),
         Node.identifier('groups')
       ),
       '=',
@@ -23,7 +23,7 @@ function name () {
   return Node.expressionStatement(
     Node.assignmentExpression(
       Node.memberExpression(
-        Node.identifier('parent'),
+        Node.identifier('object'),
         Node.identifier('name')
       ),
       '=',
@@ -36,7 +36,7 @@ function description () {
   return Node.expressionStatement(
     Node.assignmentExpression(
       Node.memberExpression(
-        Node.identifier('parent'),
+        Node.identifier('object'),
         Node.identifier('description')
       ),
       '=',

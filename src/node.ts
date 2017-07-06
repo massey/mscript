@@ -90,6 +90,9 @@ export default class Node {
      let node = new Node('Literal')
 
      node.value = value
+     node.raw = typeof value === 'number'
+                ? value.toString()
+                : `'${value}'`
 
      return node
    }
@@ -113,6 +116,10 @@ export default class Node {
 
      node.key = key
      node.value = value
+     node.computed = false
+     node.kind = 'init'
+     node.method = false
+     node.shorthand = false
 
      return node
    }
@@ -120,6 +127,7 @@ export default class Node {
    static program (): Node {
      let node = new Node('Program')
      node.body = []
+     node.sourceType = 'script'
 
      return node
    }

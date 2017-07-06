@@ -11,8 +11,8 @@ function paramWidth () {
   properties.push(Node.property(Node.identifier('name'), Node.literal('width')))
 
   let objectExpression = Node.objectExpression(properties)
-  let parent = Node.identifier('parent')
-  let call = Node.callExpression(Node.identifier('param'), [parent, objectExpression])
+  let object = Node.identifier('object')
+  let call = Node.callExpression(Node.identifier('param'), [object, objectExpression])
   let id = Node.identifier('width')
   let declarator = Node.variableDeclarator(id, call)
 
@@ -28,8 +28,8 @@ function paramDepth () {
   properties.push(Node.property(Node.identifier('name'), Node.literal('depth')))
 
   let objectExpression = Node.objectExpression(properties)
-  let parent = Node.identifier('parent')
-  let call = Node.callExpression(Node.identifier('param'), [parent, objectExpression])
+  let object = Node.identifier('object')
+  let call = Node.callExpression(Node.identifier('param'), [object, objectExpression])
   let id = Node.identifier('depth')
   let declarator = Node.variableDeclarator(id, call)
 
@@ -58,8 +58,8 @@ function componentBase () {
   properties.push(Node.property(Node.identifier('name'), Node.literal('base')))
 
   let objectExpression = Node.objectExpression(properties)
-  let parent = Node.identifier('parent')
-  let call = Node.callExpression(Node.identifier('component'), [parent, objectExpression])
+  let object = Node.identifier('object')
+  let call = Node.callExpression(Node.identifier('component'), [object, objectExpression])
   let id = Node.identifier('base')
   let declarator = Node.variableDeclarator(id, call)
 

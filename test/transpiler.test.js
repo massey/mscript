@@ -2,8 +2,10 @@ const assert      = require('assert')
 const fs          = require('fs')
 const path        = require('path')
 
+const acorn       = require('acorn')
 const mscript     = require('../dist/mscript').transpile
 const mscriptAST  = require('../dist/mscript').interpret
+const helpers     = require('./helpers')
 
 const deadSimpleInput  = fs.readFileSync(path.resolve(__dirname, './scripts/dead_simple.js'), 'utf-8')
 const deadSimpleOutput = mscript(deadSimpleInput)
@@ -24,11 +26,11 @@ describe('Try some AST equality testing', () => {
   })
 
   test('a simple mscript', () => {
-    let input  = fs.readFileSync(path.resolve(__dirname, './scripts/simple.js'), 'utf-8')
-    let ast    = mscriptAST(input)
-    let expAST = require('./ast/simple.ast.js')
+    let input    = fs.readFileSync(path.resolve(__dirname, './scripts/simple.ms'), 'utf-8')
+    let ast      = mscriptAST(input)
+    let expected = acorn.parse(fs.readFileSync(path.resolve(__dirname, './scripts/simple.js'), 'utf-8'))
 
-    expect(ast).toEqual(expAST)
+    expect(ast).toEqual(helpers.stripLocations(expected))
     expect(mscript(input))
   })
 
@@ -61,48 +63,6 @@ describe('Try some AST equality testing', () => {
 
     expect(ast).toEqual(expAST)
     expect(mscript(input))
-  })
-
-  test('a script transpiled with some saved data and a parent', () => {
-    let input  = fs.readFileSync(path.resolve(__dirname, './scripts/options.js'), 'utf-8')
-    let expAST = require('./ast/options.ast.js')
-    let options = {
-      data: {
-        params: [
-          {
-            name: 'width',
-            value: 200
-          },
-          {
-            name: 'depth',
-            value: 'bye'
-          },
-          {
-            name: 'height',
-            accessor: 'bar'
-          }
-        ]
-      },
-      parent: {
-        params: [
-          {
-            name: 'test'
-          }
-        ],
-        parent: {
-          params: [
-            {
-              name: 'radius'
-            }
-          ]
-        }
-      }
-    }
-
-    let ast = mscriptAST(input, options)
-
-    expect(ast).toEqual(expAST)
-    expect(mscript(input, options))
   })
 
   test('a script with a group', () => {

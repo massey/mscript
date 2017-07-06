@@ -9,28 +9,28 @@ export default class Interpreter {
   output: Node
   inputPos: number
   inputNode: Node
-  parent: any
+  // parent: any
   currentParentName: string
-  data:  SavedData
+  // data:  SavedData
   inAttributes: Boolean
   inComponent: Boolean
   inGroup: Boolean
   inParam: Boolean
   stack: Array<Array<Node>>
 
-  constructor (ast: Node, options: {data?: SavedData, parent?: any}) {
+  constructor (ast: Node/*, options: {data?: SavedData, parent?: any}*/) {
     this.input    = ast
     this.inputPos = 0
 
-    if (options) {
-      this.data   = options.data
-      this.parent = options.parent
-    }
+    // if (options) {
+    //   this.data   = options.data
+    //   this.parent = options.parent
+    // }
 
     /* Keep track of what command we're inside of. */
     this.context = []
     this.inAttributes = this.inGroup = this.inParam = this.inComponent = false
-    this.currentParentName = 'parent'
+    this.currentParentName = 'object'
 
     /* Keep track of what type of node we're in when walking an expression. */
     this.inside = ''
@@ -47,10 +47,6 @@ export default class Interpreter {
     this.output = Node.program()
 
     this.openScope(this.input)
-
-    if (this.parent) {
-      this.injectParentParams()
-    }
 
     this.compileNode(this.input)
 
@@ -121,8 +117,8 @@ export default class Interpreter {
     })
 
     let attributes: Node = Node.arrayExpression(elements)
-    let parent: Node = Node.identifier('parent')
-    let call: Node = Node.callExpression('attributes', [parent, attributes])
+    let object: Node = Node.identifier('object')
+    let call: Node = Node.callExpression('attributes', [object, attributes])
     let node: Node = Node.expressionStatement(call)
 
     this.output.body.push(node)
@@ -197,7 +193,7 @@ export default class Interpreter {
     this.currentParentName = details.id
     if (command.body) this.compileNode(command.body)
     this.closeScope()
-    this.currentParentName = 'parent'
+    this.currentParentName = 'object'
 
     this.inGroup = false
   }
@@ -209,7 +205,7 @@ export default class Interpreter {
         Node.expressionStatement(
           Node.assignmentExpression(
             Node.memberExpression(
-              Node.identifier('parent'),
+              Node.identifier('object'),
               Node.identifier(option.label.name)
             ),
             '=',
@@ -220,34 +216,34 @@ export default class Interpreter {
     })
   }
 
-  injectParentParams () {
-    let params: Array<any> = Interpreter.enumerateParams(this.parent)
-
-    if (!params) return
-
-    params.forEach((param: any) => {
-      this.output.body.push(Node.variableDeclaration(
-        'var',
-        [Node.variableDeclarator(
-          Node.identifier(param.name),
-          Node.memberExpression(
-            Node.memberExpression(
-              Node.memberExpression(
-                Node.identifier('parent'),
-                Node.identifier('parent')
-              ),
-              Node.identifier('params')
-            ),
-            Node.literal(0),
-            true
-          )
-        )]
-      ))
-
-      Object.defineProperty(param, 'referenceType', { value: 'param'})
-      this.pushToStack(param)
-    })
-  }
+  // injectParentParams () {
+  //   let params: Array<any> = Interpreter.enumerateParams(this.parent)
+  //
+  //   if (!params) return
+  //
+  //   params.forEach((param: any) => {
+  //     this.output.body.push(Node.variableDeclaration(
+  //       'var',
+  //       [Node.variableDeclarator(
+  //         Node.identifier(param.name),
+  //         Node.memberExpression(
+  //           Node.memberExpression(
+  //             Node.memberExpression(
+  //               Node.identifier('object'),
+  //               Node.identifier('parent')
+  //             ),
+  //             Node.identifier('params')
+  //           ),
+  //           Node.literal(0),
+  //           true
+  //         )
+  //       )]
+  //     ))
+  //
+  //     Object.defineProperty(param, 'referenceType', { value: 'param'})
+  //     this.pushToStack(param)
+  //   })
+  // }
 
   convertOptions (options: Array<Node>): Array<Node> {
     let nodes: Array<Node> = []
@@ -326,15 +322,15 @@ export default class Interpreter {
   (command: Node, details: {id: string, options: Array<Node> }): void {
     let properties: Array<Node> = this.convertOptions(details.options)
 
-    if (this.data) {
-      if (this.data.params) {
-        let param = this.data.params.find((p: ParamData) => {
-          return p.name === details.id
-        })
-
-        Interpreter.modifyParamOptions(properties, param)
-      }
-    }
+    // if (this.data) {
+    //   if (this.data.params) {
+    //     let param = this.data.params.find((p: ParamData) => {
+    //       return p.name === details.id
+    //     })
+    //
+    //     Interpreter.modifyParamOptions(properties, param)
+    //   }
+    // }
 
     let name = Node.identifier('name')
     properties.push(Node.property(name, Node.literal(details.id)))
@@ -344,6 +340,9 @@ export default class Interpreter {
     let id: Node   = Node.identifier(details.id)
     let declarator = Node.variableDeclarator(id, call)
     let node: Node = Node.variableDeclaration('var', [declarator])
+
+    // Tag optionsObject as 'paramOptions'
+    Object.defineProperty(optionsObject, 'tagged', {value: 'paramOptions' })
 
     Object.defineProperty(id, 'referenceType', { value: 'param'})
     this.pushToStack(id)
@@ -465,6 +464,7 @@ export default class Interpreter {
    */
   static modifyParamOptions
   (options: Array<Node>, savedParam: ParamData) {
+    console.log(savedParam)
     if (savedParam.value) {
       let option = options.find(o => {
         return o.key.name === 'value'

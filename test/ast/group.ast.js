@@ -9,8 +9,8 @@ function groupAll () {
   properties.push(Node.property(Node.identifier('name'), Node.literal('all')))
 
   let objectExpression = Node.objectExpression(properties)
-  let parent = Node.identifier('parent')
-  return caller('all', 'group', [parent, objectExpression])
+  let object = Node.identifier('object')
+  return caller('all', 'group', [object, objectExpression])
 }
 
 node.body.push(groupAll())
