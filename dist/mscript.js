@@ -64,11 +64,171 @@ module.exports =
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 3);
+/******/ 	return __webpack_require__(__webpack_require__.s = 4);
 /******/ })
 /************************************************************************/
 /******/ ([
 /* 0 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+Object.defineProperty(exports, "__esModule", { value: true });
+
+var Node = function () {
+    function Node(type) {
+        _classCallCheck(this, Node);
+
+        this.type = type;
+    }
+
+    _createClass(Node, null, [{
+        key: "arrayExpression",
+        value: function arrayExpression(elements) {
+            var node = new Node('ArrayExpression');
+            node.elements = elements || [];
+            return node;
+        }
+    }, {
+        key: "assignmentExpression",
+        value: function assignmentExpression(left, operator, right) {
+            var node = new Node('AssignmentExpression');
+            node.left = left;
+            node.operator = operator;
+            node.right = right;
+            return node;
+        }
+        /* Node factory methods. */
+
+    }, {
+        key: "arrowFunctionExpression",
+        value: function arrowFunctionExpression(params, body) {
+            var node = new Node('ArrowFunctionExpression');
+            node.params = params;
+            node.body = body;
+            node.id = null;
+            node.generator = false;
+            node.expression = true;
+            return node;
+        }
+    }, {
+        key: "binaryExpression",
+        value: function binaryExpression(left, operator, right) {
+            var node = new Node('BinaryExpression');
+            node.left = left;
+            node.operator = operator;
+            node.right = right;
+            return node;
+        }
+    }, {
+        key: "callExpression",
+        value: function callExpression(callee, args) {
+            var node = new Node('CallExpression');
+            if (typeof callee === 'string') {
+                node.callee = Node.identifier(callee);
+            } else if (callee instanceof Node) {
+                node.callee = callee;
+            }
+            node.arguments = args || [];
+            return node;
+        }
+    }, {
+        key: "conditionalExpression",
+        value: function conditionalExpression(test, consequent, alternate) {
+            var node = new Node('ConditionalExpression');
+            node.test = test;
+            node.consequent = consequent;
+            node.alternate = alternate;
+            return node;
+        }
+    }, {
+        key: "expressionStatement",
+        value: function expressionStatement(expression) {
+            var node = new Node('ExpressionStatement');
+            node.expression = expression;
+            return node;
+        }
+    }, {
+        key: "identifier",
+        value: function identifier(name) {
+            var node = new Node('Identifier');
+            node.name = name;
+            return node;
+        }
+    }, {
+        key: "literal",
+        value: function literal(value) {
+            var node = new Node('Literal');
+            node.value = value;
+            node.raw = typeof value === 'number' ? value.toString() : "'" + value + "'";
+            return node;
+        }
+    }, {
+        key: "memberExpression",
+        value: function memberExpression(obj, property, computed) {
+            var node = new Node('MemberExpression');
+            node.object = obj;
+            node.property = property;
+            node.computed = computed ? true : false;
+            return node;
+        }
+    }, {
+        key: "objectExpression",
+        value: function objectExpression(properties) {
+            var node = new Node('ObjectExpression');
+            node.properties = properties || [];
+            return node;
+        }
+    }, {
+        key: "property",
+        value: function property(key, value) {
+            var node = new Node('Property');
+            node.key = key;
+            node.value = value;
+            node.computed = false;
+            node.kind = 'init';
+            node.method = false;
+            node.shorthand = false;
+            return node;
+        }
+    }, {
+        key: "program",
+        value: function program() {
+            var node = new Node('Program');
+            node.body = [];
+            node.sourceType = 'script';
+            return node;
+        }
+    }, {
+        key: "variableDeclaration",
+        value: function variableDeclaration(kind, declarations) {
+            var node = new Node('VariableDeclaration');
+            node.kind = kind;
+            node.declarations = declarations || [];
+            return node;
+        }
+    }, {
+        key: "variableDeclarator",
+        value: function variableDeclarator(id, init) {
+            var node = new Node('VariableDeclarator');
+            node.id = id;
+            node.init = init;
+            return node;
+        }
+    }]);
+
+    return Node;
+}();
+
+exports.default = Node;
+
+/***/ }),
+/* 1 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -3771,7 +3931,7 @@ exports.lineBreakG = lineBreakG;
 exports.nonASCIIwhitespace = nonASCIIwhitespace;
 
 /***/ }),
-/* 1 */
+/* 2 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -5773,7 +5933,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 })(undefined);
 
 /***/ }),
-/* 2 */
+/* 3 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -5784,7 +5944,7 @@ var _createClass = function () { function defineProperties(target, props) { for 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var node_1 = __webpack_require__(4);
+var node_1 = __webpack_require__(0);
 
 var Interpreter = function () {
     function Interpreter(ast /*, options: {data?: SavedData, parent?: any}*/) {
@@ -5950,35 +6110,6 @@ var Interpreter = function () {
                 _this3.output.body.push(node_1.default.expressionStatement(node_1.default.assignmentExpression(node_1.default.memberExpression(node_1.default.identifier('object'), node_1.default.identifier(option.label.name)), '=', _this3.walkExpression(option.body.expression))));
             });
         }
-        // injectParentParams () {
-        //   let params: Array<any> = Interpreter.enumerateParams(this.parent)
-        //
-        //   if (!params) return
-        //
-        //   params.forEach((param: any) => {
-        //     this.output.body.push(Node.variableDeclaration(
-        //       'var',
-        //       [Node.variableDeclarator(
-        //         Node.identifier(param.name),
-        //         Node.memberExpression(
-        //           Node.memberExpression(
-        //             Node.memberExpression(
-        //               Node.identifier('object'),
-        //               Node.identifier('parent')
-        //             ),
-        //             Node.identifier('params')
-        //           ),
-        //           Node.literal(0),
-        //           true
-        //         )
-        //       )]
-        //     ))
-        //
-        //     Object.defineProperty(param, 'referenceType', { value: 'param'})
-        //     this.pushToStack(param)
-        //   })
-        // }
-
     }, {
         key: "convertOptions",
         value: function convertOptions(options) {
@@ -6058,15 +6189,6 @@ var Interpreter = function () {
         key: "param",
         value: function param(command, details) {
             var properties = this.convertOptions(details.options);
-            // if (this.data) {
-            //   if (this.data.params) {
-            //     let param = this.data.params.find((p: ParamData) => {
-            //       return p.name === details.id
-            //     })
-            //
-            //     Interpreter.modifyParamOptions(properties, param)
-            //   }
-            // }
             var name = node_1.default.identifier('name');
             properties.push(node_1.default.property(name, node_1.default.literal(details.id)));
             var optionsObject = node_1.default.objectExpression(properties);
@@ -6075,6 +6197,8 @@ var Interpreter = function () {
             var id = node_1.default.identifier(details.id);
             var declarator = node_1.default.variableDeclarator(id, call);
             var node = node_1.default.variableDeclaration('var', [declarator]);
+            // Tag node as a param
+            Object.defineProperty(node, 'tagged', { value: 'param' });
             // Tag optionsObject as 'paramOptions'
             Object.defineProperty(optionsObject, 'tagged', { value: 'paramOptions' });
             Object.defineProperty(id, 'referenceType', { value: 'param' });
@@ -6204,27 +6328,18 @@ var Interpreter = function () {
 exports.default = Interpreter;
 
 /***/ }),
-/* 3 */
+/* 4 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
 Object.defineProperty(exports, "__esModule", { value: true });
-var acorn = __webpack_require__(0);
-var interpreter_1 = __webpack_require__(2);
-var esotope = __webpack_require__(1);
-// export function transpile
-// (input: string, options: {savedData?: SavedData, parent?: any}): string {
-//   let ast = acorn.parse(input)
-//   let i   = new Interpreter(ast as Node, options)
-//
-//   return esotope.generate(i.compile(), {
-//     format: {
-//       semicolons: false
-//     }
-//   })
-// }
+var acorn = __webpack_require__(1);
+var interpreter_1 = __webpack_require__(3);
+var esotope = __webpack_require__(2);
+var node_1 = __webpack_require__(0);
+exports.Node = node_1.default;
 function interpret(input, options) {
     var ast = acorn.parse(input);
     var i = new interpreter_1.default(ast);
@@ -6243,166 +6358,6 @@ function generate(ast) {
     });
 }
 exports.generate = generate;
-
-/***/ }),
-/* 4 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-Object.defineProperty(exports, "__esModule", { value: true });
-
-var Node = function () {
-    function Node(type) {
-        _classCallCheck(this, Node);
-
-        this.type = type;
-    }
-
-    _createClass(Node, null, [{
-        key: "arrayExpression",
-        value: function arrayExpression(elements) {
-            var node = new Node('ArrayExpression');
-            node.elements = elements || [];
-            return node;
-        }
-    }, {
-        key: "assignmentExpression",
-        value: function assignmentExpression(left, operator, right) {
-            var node = new Node('AssignmentExpression');
-            node.left = left;
-            node.operator = operator;
-            node.right = right;
-            return node;
-        }
-        /* Node factory methods. */
-
-    }, {
-        key: "arrowFunctionExpression",
-        value: function arrowFunctionExpression(params, body) {
-            var node = new Node('ArrowFunctionExpression');
-            node.params = params;
-            node.body = body;
-            node.id = null;
-            node.generator = false;
-            node.expression = true;
-            return node;
-        }
-    }, {
-        key: "binaryExpression",
-        value: function binaryExpression(left, operator, right) {
-            var node = new Node('BinaryExpression');
-            node.left = left;
-            node.operator = operator;
-            node.right = right;
-            return node;
-        }
-    }, {
-        key: "callExpression",
-        value: function callExpression(callee, args) {
-            var node = new Node('CallExpression');
-            if (typeof callee === 'string') {
-                node.callee = Node.identifier(callee);
-            } else if (callee instanceof Node) {
-                node.callee = callee;
-            }
-            node.arguments = args || [];
-            return node;
-        }
-    }, {
-        key: "conditionalExpression",
-        value: function conditionalExpression(test, consequent, alternate) {
-            var node = new Node('ConditionalExpression');
-            node.test = test;
-            node.consequent = consequent;
-            node.alternate = alternate;
-            return node;
-        }
-    }, {
-        key: "expressionStatement",
-        value: function expressionStatement(expression) {
-            var node = new Node('ExpressionStatement');
-            node.expression = expression;
-            return node;
-        }
-    }, {
-        key: "identifier",
-        value: function identifier(name) {
-            var node = new Node('Identifier');
-            node.name = name;
-            return node;
-        }
-    }, {
-        key: "literal",
-        value: function literal(value) {
-            var node = new Node('Literal');
-            node.value = value;
-            node.raw = typeof value === 'number' ? value.toString() : "'" + value + "'";
-            return node;
-        }
-    }, {
-        key: "memberExpression",
-        value: function memberExpression(obj, property, computed) {
-            var node = new Node('MemberExpression');
-            node.object = obj;
-            node.property = property;
-            node.computed = computed ? true : false;
-            return node;
-        }
-    }, {
-        key: "objectExpression",
-        value: function objectExpression(properties) {
-            var node = new Node('ObjectExpression');
-            node.properties = properties || [];
-            return node;
-        }
-    }, {
-        key: "property",
-        value: function property(key, value) {
-            var node = new Node('Property');
-            node.key = key;
-            node.value = value;
-            node.computed = false;
-            node.kind = 'init';
-            node.method = false;
-            node.shorthand = false;
-            return node;
-        }
-    }, {
-        key: "program",
-        value: function program() {
-            var node = new Node('Program');
-            node.body = [];
-            node.sourceType = 'script';
-            return node;
-        }
-    }, {
-        key: "variableDeclaration",
-        value: function variableDeclaration(kind, declarations) {
-            var node = new Node('VariableDeclaration');
-            node.kind = kind;
-            node.declarations = declarations || [];
-            return node;
-        }
-    }, {
-        key: "variableDeclarator",
-        value: function variableDeclarator(id, init) {
-            var node = new Node('VariableDeclarator');
-            node.id = id;
-            node.init = init;
-            return node;
-        }
-    }]);
-
-    return Node;
-}();
-
-exports.default = Node;
 
 /***/ })
 /******/ ]);

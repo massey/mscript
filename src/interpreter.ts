@@ -216,35 +216,6 @@ export default class Interpreter {
     })
   }
 
-  // injectParentParams () {
-  //   let params: Array<any> = Interpreter.enumerateParams(this.parent)
-  //
-  //   if (!params) return
-  //
-  //   params.forEach((param: any) => {
-  //     this.output.body.push(Node.variableDeclaration(
-  //       'var',
-  //       [Node.variableDeclarator(
-  //         Node.identifier(param.name),
-  //         Node.memberExpression(
-  //           Node.memberExpression(
-  //             Node.memberExpression(
-  //               Node.identifier('object'),
-  //               Node.identifier('parent')
-  //             ),
-  //             Node.identifier('params')
-  //           ),
-  //           Node.literal(0),
-  //           true
-  //         )
-  //       )]
-  //     ))
-  //
-  //     Object.defineProperty(param, 'referenceType', { value: 'param'})
-  //     this.pushToStack(param)
-  //   })
-  // }
-
   convertOptions (options: Array<Node>): Array<Node> {
     let nodes: Array<Node> = []
 
@@ -322,16 +293,6 @@ export default class Interpreter {
   (command: Node, details: {id: string, options: Array<Node> }): void {
     let properties: Array<Node> = this.convertOptions(details.options)
 
-    // if (this.data) {
-    //   if (this.data.params) {
-    //     let param = this.data.params.find((p: ParamData) => {
-    //       return p.name === details.id
-    //     })
-    //
-    //     Interpreter.modifyParamOptions(properties, param)
-    //   }
-    // }
-
     let name = Node.identifier('name')
     properties.push(Node.property(name, Node.literal(details.id)))
     let optionsObject: Node = Node.objectExpression(properties)
@@ -341,6 +302,8 @@ export default class Interpreter {
     let declarator = Node.variableDeclarator(id, call)
     let node: Node = Node.variableDeclaration('var', [declarator])
 
+    // Tag node as a param
+    Object.defineProperty(node, 'tagged', {value: 'param' })
     // Tag optionsObject as 'paramOptions'
     Object.defineProperty(optionsObject, 'tagged', {value: 'paramOptions' })
 

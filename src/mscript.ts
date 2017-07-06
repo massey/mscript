@@ -24,3 +24,5 @@ export function generate (ast: Node): string {
     semicolons: false
   })
 }
+
+export { Node }
