@@ -6334,6 +6334,8 @@ exports.default = Interpreter;
 "use strict";
 
 
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
 Object.defineProperty(exports, "__esModule", { value: true });
 var acorn = __webpack_require__(1);
 var interpreter_1 = __webpack_require__(3);
@@ -6358,6 +6360,27 @@ function generate(ast) {
     });
 }
 exports.generate = generate;
+function traverse(node, callback) {
+    if (node instanceof Array) {
+        node.forEach(function (_node) {
+            traverse(_node, callback);
+        });
+    } else {
+        if (callback instanceof Array) {
+            callback.forEach(function (_call) {
+                _call(node);
+            });
+        } else {
+            callback(node);
+        }
+        if ((typeof node === "undefined" ? "undefined" : _typeof(node)) === 'object' && node !== 'null') {
+            for (var key in node) {
+                if ((typeof node === "undefined" ? "undefined" : _typeof(node)) === 'object' && node !== 'null') traverse(node, callback);
+            }
+        }
+    }
+}
+exports.traverse = traverse;
 
 /***/ })
 /******/ ]);
