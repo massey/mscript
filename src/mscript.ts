@@ -25,4 +25,26 @@ export function generate (ast: Node): string {
   })
 }
 
+export function traverse (node: any, callback: any): void {
+  if (node instanceof Array) {
+    node.forEach(_node => {
+      traverse(_node, callback)
+    })
+  } else {
+    if (callback instanceof Array) {
+      callback.forEach(_call => {
+        _call(node)
+      })
+    } else {
+      callback(node)
+    }
+
+    if (typeof node === 'object' && node !== 'null') {
+      for (let key in node) {
+        if (typeof node === 'object' && node !== 'null') traverse(node, callback)
+      }
+    }
+  }
+}
+
 export { Node }
