@@ -6385,6 +6385,26 @@ function traverse(node, callback) {
     }
 }
 exports.traverse = traverse;
+// Only traverse nodes that have a 'body' property.
+function shallowBodyTraverse(node, callback) {
+    if (node instanceof Array) {
+        node.forEach(function (_node) {
+            shallowBodyTraverse(_node, callback);
+        });
+    } else {
+        if (callback instanceof Array) {
+            callback.forEach(function (_call) {
+                _call(node);
+            });
+        } else if (callback) {
+            callback(node);
+        }
+        if ((typeof node === "undefined" ? "undefined" : _typeof(node)) === 'object' && node !== null && node.body) {
+            shallowBodyTraverse(node.body, callback);
+        }
+    }
+}
+exports.shallowBodyTraverse = shallowBodyTraverse;
 
 /***/ })
 /******/ ]);
