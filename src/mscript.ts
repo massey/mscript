@@ -51,4 +51,25 @@ export function traverse (node: any, callback: any): void {
   }
 }
 
+// Only traverse nodes that have a 'body' property.
+export function shallowBodyTraverse (node: any, callback: any): void {
+  if (node instanceof Array) {
+    node.forEach(_node => {
+      shallowBodyTraverse(_node, callback)
+    })
+  } else {
+    if (callback instanceof Array) {
+      callback.forEach(_call => {
+        _call(node)
+      })
+    } else if (callback){
+      callback(node)
+    }
+
+    if (typeof node === 'object' && node !== null && node.body) {
+      shallowBodyTraverse(node.body, callback)
+    }
+  }
+}
+
 export { Node }
