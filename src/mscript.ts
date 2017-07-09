@@ -35,13 +35,13 @@ export function traverse (node: any, callback: any): void {
       callback.forEach(_call => {
         _call(node)
       })
-    } else {
+    } else if (callback){
       callback(node)
     }
 
-    if (typeof node === 'object' && node !== 'null') {
+    if (typeof node === 'object' && node !== null) {
       for (let key in node) {
-        if (typeof node === 'object' && node !== 'null') traverse(node, callback)
+        if (typeof node[key] === 'object' && node !== null) traverse(node[key], callback)
       }
     }
   }

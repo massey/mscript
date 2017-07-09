@@ -6361,6 +6361,7 @@ function generate(ast) {
 }
 exports.generate = generate;
 function traverse(node, callback) {
+    console.log(node);
     if (node instanceof Array) {
         node.forEach(function (_node) {
             traverse(_node, callback);
@@ -6370,12 +6371,12 @@ function traverse(node, callback) {
             callback.forEach(function (_call) {
                 _call(node);
             });
-        } else {
+        } else if (callback) {
             callback(node);
         }
-        if ((typeof node === "undefined" ? "undefined" : _typeof(node)) === 'object' && node !== 'null') {
+        if ((typeof node === "undefined" ? "undefined" : _typeof(node)) === 'object' && node !== null) {
             for (var key in node) {
-                if ((typeof node === "undefined" ? "undefined" : _typeof(node)) === 'object' && node !== 'null') traverse(node, callback);
+                if (_typeof(node[key]) === 'object' && node !== null) traverse(node[key], callback);
             }
         }
     }
