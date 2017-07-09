@@ -6352,6 +6352,13 @@ function parse(input) {
     return acorn.parse(input);
 }
 exports.parse = parse;
+function compile(input, options) {
+    var ast = acorn.parse(input);
+    var i = new interpreter_1.default(ast);
+    return i.compile();
+}
+exports.compile = compile;
+// To be deprecated in favour of compile
 function transpile(input, options) {
     var ast = acorn.parse(input);
     var i = new interpreter_1.default(ast);
