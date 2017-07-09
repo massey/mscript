@@ -1,6 +1,6 @@
 {
   "name": "mscript",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "MScript parser and compiler.",
   "main": "dist/mscript.js",
   "scripts": {
