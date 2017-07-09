@@ -12,6 +12,10 @@ export function interpret
   return  i.compile()
 }
 
+export function parse (input: string): Node {
+  return acorn.parse(input) as Node
+}
+
 export function transpile (input: string, options: {savedData?: SavedData, parent?: any}): Node {
   let ast = acorn.parse(input)
   let i   = new Interpreter(ast as Node)
