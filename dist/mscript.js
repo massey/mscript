@@ -5997,6 +5997,9 @@ var Interpreter = function () {
                         _this.compileNode(n);
                     });
                     break;
+                case 'VariableDeclaration':
+                    this.variableDeclaration(node);
+                    break;
                 default:
             }
         }
@@ -6111,13 +6114,23 @@ var Interpreter = function () {
             });
         }
     }, {
+        key: "variableDeclaration",
+        value: function variableDeclaration(node) {
+            var _this4 = this;
+
+            node.declarations.forEach(function (dec) {
+                _this4.pushToStack(dec.id);
+            });
+            this.output.body.push(node);
+        }
+    }, {
         key: "convertOptions",
         value: function convertOptions(options) {
-            var _this4 = this;
+            var _this5 = this;
 
             var nodes = [];
             options.forEach(function (option) {
-                nodes.push(_this4.convertLabeledStatementToProperty(option));
+                nodes.push(_this5.convertLabeledStatementToProperty(option));
             });
             return nodes;
         }
@@ -6220,13 +6233,13 @@ var Interpreter = function () {
     }, {
         key: "walkExpression",
         value: function walkExpression(expr) {
-            var _this5 = this;
+            var _this6 = this;
 
             switch (expr.type) {
                 case 'ArrayExpression':
                     var elements = [];
                     expr.elements.forEach(function (el) {
-                        elements.push(_this5.walkExpression(el));
+                        elements.push(_this6.walkExpression(el));
                     });
                     return node_1.default.arrayExpression(elements);
                 case 'BinaryExpression':

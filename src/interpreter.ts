@@ -72,6 +72,10 @@ export default class Interpreter {
       })
       break
 
+      case 'VariableDeclaration':
+      this.variableDeclaration(node)
+      break
+
       default:
     }
   }
@@ -214,6 +218,14 @@ export default class Interpreter {
         )
       )
     })
+  }
+
+  variableDeclaration (node: Node): void {
+    node.declarations.forEach((dec: Node) => {
+      this.pushToStack(dec.id)
+    })
+
+    this.output.body.push(node)
   }
 
   convertOptions (options: Array<Node>): Array<Node> {

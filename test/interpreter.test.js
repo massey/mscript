@@ -4,6 +4,7 @@ const mscriptAST  = require('../dist/mscript.js').interpret
 const Interpreter = require('../dist/interpreter.js').default
 const Node        = require('../dist/node.js').default
 const parse       = require('acorn').parse
+const helpers     = require('./helpers.js')
 
 /* Here we instantiate a new Interpreter and check it's initial state, run a
  * few methods to see how the state changes. */
@@ -129,5 +130,25 @@ describe('new interpreter with simple AST', () => {
     expect(oe.properties[1].key.name).toBe('value')
     expect(oe.properties[1].value.type).toBe('Literal')
     expect(oe.properties[1].value.value).toBe(1000)
+  })
+})
+
+describe('Interpreter variable declarations', () => {
+  test('injected variables should be handled properly', () => {
+    let script         = fs.readFileSync(path.resolve(__dirname, './scripts/variable-injection.ms'), 'utf-8')
+    let ast            = parse(script)
+    let expectedScript = fs.readFileSync(path.resolve(__dirname, './scripts/variable-injection.js'), 'utf-8')
+    let expectedAST    = parse(expectedScript)
+
+    let variables = require('./ast/variable-injection.js')
+
+    // Inject some variables at the beginning
+    ast.body = variables.concat(ast.body)
+
+    let interpreter = new Interpreter(ast)
+
+    let interpretedAST = interpreter.compile()
+
+    expect(interpretedAST).toEqual(helpers.stripLocations(expectedAST))
   })
 })
