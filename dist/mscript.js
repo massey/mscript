@@ -161,6 +161,14 @@ var Node = function () {
             return node;
         }
     }, {
+        key: "labeledStatement",
+        value: function labeledStatement(label, expression) {
+            var node = new Node('LabeledStatement');
+            node.label = Node.identifier(label);
+            node.body = expression;
+            return node;
+        }
+    }, {
         key: "literal",
         value: function literal(value) {
             var node = new Node('Literal');

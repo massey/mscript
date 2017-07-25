@@ -86,6 +86,15 @@ export default class Node {
      return node
    }
 
+   static labeledStatement (label: string, expression: Node): Node {
+     let node = new Node('LabeledStatement')
+
+     node.label = Node.identifier(label)
+     node.body  = expression
+
+     return node
+   }
+
    static literal (value: any): Node {
      let node = new Node('Literal')
 
