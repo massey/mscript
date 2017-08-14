@@ -1,18 +1,22 @@
-group all {
+var all = group(object, {
+  name: 'all'
+})
 
-    param faceMaterial {
-        type: 'number'
-        value: 600
-    }
+var faceMaterial = param(all, {
+  type: 'number',
+  value: 600,
+  name: 'faceMaterial'
+})
 
-    param benchtopHeight {
-        type: 'number'
-        value: 1000
-    }
+var benchtopHeight = param(all, {
+  type: 'number',
+  value: 1000,
+  name: 'benchtopHeight'
+})
 
-    component benchtop {
-      A: 23
-      B: 60
-      material: faceMaterial
-    }
-}
+var benchtop = component(all, {
+  name: 'benchtop',
+  A: 23,
+  B: 60,
+  material: () => faceMaterial.get()
+})

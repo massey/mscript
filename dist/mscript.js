@@ -6019,6 +6019,9 @@ var Interpreter = function () {
                 case 'attributes':
                     this.attributes(command, details);
                     break;
+                case 'box':
+                    this.box(command, details);
+                    break;
                 case 'component':
                     this.component(command, details);
                     break;
@@ -6067,6 +6070,12 @@ var Interpreter = function () {
             this.inAttributes = false;
         }
     }, {
+        key: "box",
+        value: function box(command, details) {
+            var properties = this.convertOptions(details.options);
+            this.output.body.push(node_1.default.variableDeclaration('var', [node_1.default.variableDeclarator(node_1.default.identifier(details.id), node_1.default.callExpression('box', [node_1.default.objectExpression(properties)]))]));
+        }
+    }, {
         key: "component",
         value: function component(command, details) {
             this.inComponent = true;
@@ -6074,10 +6083,10 @@ var Interpreter = function () {
             var isProductComponent = properties.find(function (prop) {
                 return prop.key.name === 'code';
             });
-            if (details.id) {
-                var name = node_1.default.identifier('name');
-                properties.push(node_1.default.property(name, node_1.default.literal(details.id)));
-            }
+            // if (details.id) {
+            //   let name = Node.identifier('name')
+            //   properties.push(Node.property(name, Node.literal(details.id)))
+            // }
             var call = node_1.default.callExpression('component', [node_1.default.identifier(this.currentParentName), node_1.default.objectExpression(properties)]);
             var node = void 0;
             if (isProductComponent) {
@@ -6277,6 +6286,9 @@ var Interpreter = function () {
             }
         }
         /* Static methods */
+        /**
+        Extract a command's name, identifier and options.
+        */
 
     }], [{
         key: "analyzeCommand",

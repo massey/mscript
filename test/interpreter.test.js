@@ -133,20 +133,34 @@ describe('new interpreter with simple AST', () => {
   })
 })
 
-describe('Interpreter variable declarations', () => {
-  test('injected variables should be handled properly', () => {
-    let script         = fs.readFileSync(path.resolve(__dirname, './scripts/variable-injection.ms'), 'utf-8')
+// describe('Interpreter variable declarations', () => {
+//   test('injected variables should be handled properly', () => {
+//     let script         = fs.readFileSync(path.resolve(__dirname, './scripts/variable-injection.ms'), 'utf-8')
+//     let ast            = parse(script)
+//     let expectedScript = fs.readFileSync(path.resolve(__dirname, './scripts/variable-injection.js'), 'utf-8')
+//     let expectedAST    = parse(expectedScript)
+//
+//     let variables = require('./ast/variable-injection.js')
+//
+//     // Inject some variables at the beginning
+//     ast.body = variables.concat(ast.body)
+//
+//     let interpreter = new Interpreter(ast)
+//
+//     let interpretedAST = interpreter.compile()
+//
+//     expect(interpretedAST).toEqual(helpers.stripLocations(expectedAST))
+//   })
+// })
+
+describe('Box Command', () => {
+  test('should compile to the expected javascript', () => {
+    let script         = fs.readFileSync(path.resolve(__dirname, './scripts/box.ms'), 'utf-8')
     let ast            = parse(script)
-    let expectedScript = fs.readFileSync(path.resolve(__dirname, './scripts/variable-injection.js'), 'utf-8')
+    let expectedScript = fs.readFileSync(path.resolve(__dirname, './scripts/box.js'), 'utf-8')
     let expectedAST    = parse(expectedScript)
 
-    let variables = require('./ast/variable-injection.js')
-
-    // Inject some variables at the beginning
-    ast.body = variables.concat(ast.body)
-
     let interpreter = new Interpreter(ast)
-
     let interpretedAST = interpreter.compile()
 
     expect(interpretedAST).toEqual(helpers.stripLocations(expectedAST))

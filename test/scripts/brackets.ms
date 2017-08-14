@@ -1,3 +1,3 @@
-var base = component(object, {
+component base {
   A: height + (width ? 50 : depth)
-})
+}

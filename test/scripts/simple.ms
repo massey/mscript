@@ -17,4 +17,5 @@ component base {
   A: width + 100
   B: depth
   material: '01.002'
+  name: 'base'
 }

@@ -85,6 +85,7 @@ export default class Interpreter {
 
     switch (details.name) {
       case 'attributes': this.attributes(command, details); break
+      case 'box': this.box(command, details); break
       case 'component': this.component(command, details); break
       case 'group': this.group(command, details); break
       case 'meta': this.meta(command, details); break
@@ -134,6 +135,28 @@ export default class Interpreter {
     this.inAttributes = false
   }
 
+  box
+  (command: Node, details: {id: string, options: Array<Node> }): void {
+    let properties: Array<Node> = this.convertOptions(details.options)
+
+    this.output.body.push(
+      Node.variableDeclaration(
+        'var',
+        [
+          Node.variableDeclarator(
+            Node.identifier(details.id),
+              Node.callExpression(
+                'box',
+                [
+                  Node.objectExpression(properties)
+                ]
+              )
+          )
+        ]
+      )
+    )
+  }
+
   component
   (command: Node, details: {id: string, options: Array<Node> }): void {
     this.inComponent = true
@@ -143,10 +166,10 @@ export default class Interpreter {
       return prop.key.name === 'code'
     })
 
-    if (details.id) {
-      let name = Node.identifier('name')
-      properties.push(Node.property(name, Node.literal(details.id)))
-    }
+    // if (details.id) {
+    //   let name = Node.identifier('name')
+    //   properties.push(Node.property(name, Node.literal(details.id)))
+    // }
 
     let call = Node.callExpression(
       'component',
@@ -393,6 +416,10 @@ export default class Interpreter {
   }
 
   /* Static methods */
+
+  /**
+  Extract a command's name, identifier and options.
+  */
   static analyzeCommand
   (command: Node): {name: string, id: string, options: Array<Node>} {
     let name: string, id: string, options: Array<Node>
