@@ -30,6 +30,29 @@ script.  If any parameters are declared in the script with the same name as
 a Job parameter, that parameter will override the Job parameter.  This may lead
 to unexpected results.
 
+### Products
+
+Products are used to define the materials and hardware that comprise the unit.
+Products should be defined at the start of the script so they can be fetched
+from the server.
+
+ ```
+ product {
+   code: String
+ }
+ ```
+
+### Blocks
+
+Blocks are predefined collections of geometry that can be used when defining
+machining operations on a component.
+
+```
+block {
+  name: String
+}
+```
+
 ### Components
 
 A component command must take one of the two following forms.  The first form
@@ -65,4 +88,35 @@ products will have their quantity updated.
 
 ### Parameters
 
-Parameters must be unique on an object.  
+Parameters must be unique on an object.
+
+### Geometry
+
+There are a number of geometric objects that can be used in scripts for either
+defining machining operations or simply to be used as helper objects in
+calculating certain values.
+
+#### Box
+
+A 3d box whose dimensions a, b, and c are axis parallel with x, y and z
+respectively.
+
+```
+box [id] {
+  a: Number
+  b: Number
+  c: Number
+}
+```
+
+#### Circle
+
+A 2d circle.
+
+```
+circle [id] {
+  d: Number
+  x: Number
+  y: Number
+}
+```
