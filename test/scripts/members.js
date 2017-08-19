@@ -1,15 +1,20 @@
-var width = param(object, {
+var width = param({
   type: 'number',
   value: 1000,
   name: 'width'
 })
+object.add(width)
 
-var base = component(object, {
+var base = component({
   A: () => width.get(),
-  B: () => width.get()
+  B: () => width.get(),
+  name: 'base'
 })
+object.add(base)
 
-var back = component(object, {
+var back = component({
   A: () => base.A,
-  B: () => base.B - base.thickness
+  B: () => base.B - base.thickness,
+  name: 'back'
 })
+object.add(back)

@@ -10,25 +10,17 @@ const helpers     = require('./helpers.js')
  * few methods to see how the state changes. */
 const i = new Interpreter()
 
-describe('interpreter state and some member methods', () => {
-  beforeAll(() => {
-    i.openScope('topLevel')
-  })
-
-  test('context.length should be 1', () => {
-    expect(i.context.length).toBe(1);
-  })
-
-  test('getCurrentContext() should be \'topLevel\'', () => {
-    expect(i.getCurrentContext()).toBe('topLevel')
-  })
-
-  test('stack.length should be 1', () => {
+describe('Interpreter state and some member methods', () => {
+  test('stack length should be 1', () => {
     expect(i.stack.length).toBe(1);
+  })
+
+  test('contextStack length should be 1', () => {
+    expect(i.contextStack.length).toBe(1);
   })
 })
 
-describe('interpreter static methods', () => {
+describe('Interpreter static methods', () => {
   test('makeIdentifierGettable', () => {
     let id = Node.identifier('test')
     let gettable = Interpreter.makeIdentifierGettable(id)
@@ -42,7 +34,7 @@ describe('interpreter static methods', () => {
 /* Here we instatiate with a simple AST and run compile. Check the output
  * against the expected AST. */
 
-const input   = fs.readFileSync(path.resolve(__dirname, './scripts/dead_simple.js'), 'utf-8')
+const input   = fs.readFileSync(path.resolve(__dirname, './scripts/dead_simple.ms'), 'utf-8')
 const ast     = parse(input)
 
 const command = ast.body[0]
@@ -53,12 +45,11 @@ const output  = ii.compile()
 const inspect = require('util').inspect
 
 describe('new interpreter with dead simple AST - input AST', () => {
-  test('list options in command statement with getOptions()', () => {
-    let options = ii.getOptions(command)
-    expect(options instanceof Array).toBe(true)
-    expect(options.length).toBe(2)
-    expect(options[0].type).toBe('LabeledStatement')
-    expect(options[1].type).toBe('LabeledStatement')
+  test('generateOptionsObject()', () => {
+    let options = ii.generateOptionsObject(command)
+    expect(options instanceof Node).toBe(true)
+    expect(options.type).toBe('ObjectExpression')
+    expect(options.properties.length).toBe(3)
   })
 })
 
@@ -71,13 +62,13 @@ describe('new interpreter with simple AST', () => {
     expect(output.body).toBeTruthy()
   })
 
-  test('output AST.body should be 1', () => {
-    expect(output.body.length).toBe(1)
+  test('output AST.body should be 2', () => {
+    expect(output.body.length).toBe(2)
   })
 
   let vd = output.body[0]
 
-  test('AST.body should have one VaribaleDeclaration', () => {
+  test('first node in AST.body should be a VaribaleDeclaration', () => {
     expect(vd.type).toBe('VariableDeclaration')
   })
 
@@ -105,13 +96,12 @@ describe('new interpreter with simple AST', () => {
     expect(ce.callee.name).toBe('param')
   })
 
-  test('CallExpression should have two arguments', () => {
-    expect(ce.arguments.length).toBe(2)
-    expect(ce.arguments[0].type).toBe('Identifier')
-    expect(ce.arguments[1].type).toBe('ObjectExpression')
+  test('CallExpression should have one argument', () => {
+    expect(ce.arguments.length).toBe(1)
+    expect(ce.arguments[0].type).toBe('ObjectExpression')
   })
 
-  let oe = ce.arguments[1]
+  let oe = ce.arguments[0]
 
   test('ObjectExpression should have three properties', () => {
     expect(oe.properties.length).toBe(3)
@@ -133,26 +123,6 @@ describe('new interpreter with simple AST', () => {
   })
 })
 
-// describe('Interpreter variable declarations', () => {
-//   test('injected variables should be handled properly', () => {
-//     let script         = fs.readFileSync(path.resolve(__dirname, './scripts/variable-injection.ms'), 'utf-8')
-//     let ast            = parse(script)
-//     let expectedScript = fs.readFileSync(path.resolve(__dirname, './scripts/variable-injection.js'), 'utf-8')
-//     let expectedAST    = parse(expectedScript)
-//
-//     let variables = require('./ast/variable-injection.js')
-//
-//     // Inject some variables at the beginning
-//     ast.body = variables.concat(ast.body)
-//
-//     let interpreter = new Interpreter(ast)
-//
-//     let interpretedAST = interpreter.compile()
-//
-//     expect(interpretedAST).toEqual(helpers.stripLocations(expectedAST))
-//   })
-// })
-
 describe('Box Command', () => {
   test('should compile to the expected javascript', () => {
     let script         = fs.readFileSync(path.resolve(__dirname, './scripts/box.ms'), 'utf-8')
@@ -163,6 +133,50 @@ describe('Box Command', () => {
     let interpreter = new Interpreter(ast)
     let interpretedAST = interpreter.compile()
 
-    expect(interpretedAST).toEqual(helpers.stripLocations(expectedAST))
+    expect(helpers.stripLocations(interpretedAST))
+      .toEqual(helpers.stripLocations(expectedAST))
+  })
+})
+
+describe('Function declaration', () => {
+  test('should compile to the expected javascript', () => {
+    let script         = fs.readFileSync(path.resolve(__dirname, './scripts/function-declaration.ms'), 'utf-8')
+    let ast            = parse(script)
+    let expectedScript = fs.readFileSync(path.resolve(__dirname, './scripts/function-declaration.js'), 'utf-8')
+    let expectedAST    = parse(expectedScript)
+
+    let interpreter = new Interpreter(ast)
+    let interpretedAST = interpreter.compile()
+
+    expect(helpers.stripLocations(interpretedAST)).toEqual(helpers.stripLocations(expectedAST))
+  })
+})
+
+function astEquality (ms, js) {
+  let input    = fs.readFileSync(path.resolve(__dirname, ms), 'utf-8')
+  let ast      = mscriptAST(input)
+  let expected = fs.readFileSync(path.resolve(__dirname, js), 'utf-8')
+  let expAST   = parse(expected)
+
+  expect(helpers.stripLocations(ast)).toEqual(helpers.stripLocations(expAST))
+}
+
+describe('Interpreter', () => {
+  describe('should generate the expected AST', () => {
+    test('a simple mscript', () => {
+      astEquality('./scripts/simple.ms', './scripts/simple.js')
+    })
+
+    test('a script with some member expressions', () => {
+      astEquality('./scripts/members.ms', './scripts/members.js')
+    })
+
+    test('a script with some conditionals', () => {
+      astEquality('./scripts/conditionals.ms', './scripts/conditionals.js')
+    })
+
+    test('a script with some brackets ', () => {
+      astEquality('./scripts/brackets.ms', './scripts/brackets.js')
+    })
   })
 })

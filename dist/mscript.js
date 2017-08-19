@@ -64,7 +64,7 @@ module.exports =
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 4);
+/******/ 	return __webpack_require__(__webpack_require__.s = 5);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -86,8 +86,21 @@ var Node = function () {
 
         this.type = type;
     }
+    // Append a Node to the body.  This must handle cases where a Node's body is
+    // another Node like a BlockStatement.  If it doesn't have a body,
+    // don't do anything.
 
-    _createClass(Node, null, [{
+
+    _createClass(Node, [{
+        key: "append",
+        value: function append(node) {
+            if (this.body instanceof Array) {
+                this.body.push(node);
+            } else if (this.body instanceof Node) {
+                this.body.append(node);
+            }
+        }
+    }], [{
         key: "arrayExpression",
         value: function arrayExpression(elements) {
             var node = new Node('ArrayExpression');
@@ -151,6 +164,17 @@ var Node = function () {
         value: function expressionStatement(expression) {
             var node = new Node('ExpressionStatement');
             node.expression = expression;
+            return node;
+        }
+    }, {
+        key: "functionDeclaration",
+        value: function functionDeclaration(id, params, body, options) {
+            var node = new Node('FunctionDeclaration');
+            node.id = id;
+            node.params = params;
+            node.body = body;
+            node.generator = options ? options.generator || false : false;
+            node.expression = options ? options.expression || false : false;
             return node;
         }
     }, {
@@ -5953,19 +5977,20 @@ function _classCallCheck(instance, Constructor) { if (!(instance instanceof Cons
 
 Object.defineProperty(exports, "__esModule", { value: true });
 var node_1 = __webpack_require__(0);
+var entities_1 = __webpack_require__(4);
 
 var Interpreter = function () {
-    function Interpreter(ast /*, options: {data?: SavedData, parent?: any}*/) {
+    function Interpreter(ast) {
         _classCallCheck(this, Interpreter);
 
         this.input = ast;
         this.inputPos = 0;
-        // if (options) {
-        //   this.data   = options.data
-        //   this.parent = options.parent
-        // }
         /* Keep track of what command we're inside of. */
         this.context = [];
+        this.contextStack = [new entities_1.ObjectEntity()];
+        this.currentBody = node_1.default.program();
+        this.output = this.currentBody;
+        this.outputStack = [this.currentBody];
         this.inAttributes = this.inGroup = this.inParam = this.inComponent = false;
         this.currentParentName = 'object';
         /* Keep track of what type of node we're in when walking an expression. */
@@ -5973,37 +5998,37 @@ var Interpreter = function () {
         /* Signals if an expression needs to be wrapped in an arrow function. */
         this.isGettable = false;
         /* Identifiers are kept in nested arrays. */
-        this.stack = [];
+        this.stack = [[]];
     }
-    // Compile kicks off the interpreter.
+    // Compile kicks off the interpreter.  Iterate over each node in the input
+    // body, compile it and add result to the output.
 
 
     _createClass(Interpreter, [{
         key: "compile",
         value: function compile() {
-            this.output = node_1.default.program();
-            this.openScope(this.input);
-            this.compileNode(this.input);
+            var _this = this;
+
+            this.input.body.forEach(function (n) {
+                _this.compileNode(n);
+            });
             return this.output;
         }
     }, {
         key: "compileNode",
         value: function compileNode(node) {
-            var _this = this;
-
             switch (node.type) {
                 case 'BlockStatement':
-                    node.body.forEach(function (n) {
-                        _this.compileNode(n);
-                    });
+                    this.blockStatement(node);
                     break;
                 case 'CommandStatement':
                     this.commandStatement(node);
                     break;
-                case 'Program':
-                    node.body.forEach(function (n) {
-                        _this.compileNode(n);
-                    });
+                case 'FunctionDeclaration':
+                    this.functionDeclaration(node);
+                    break;
+                case 'IfStatement':
+                    this.ifStatement(node);
                     break;
                 case 'VariableDeclaration':
                     this.variableDeclaration(node);
@@ -6011,19 +6036,59 @@ var Interpreter = function () {
                 default:
             }
         }
+        /**
+        Return the Node to whose body statements are being added
+        */
+
+    }, {
+        key: "body",
+        value: function body() {
+            return this.outputStack[this.outputStack.length - 1];
+        }
+    }, {
+        key: "accept",
+        value: function accept(entity) {
+            for (var i = this.contextStack.length - 1; i >= 0; i--) {
+                var acceptor = this.contextStack[i].accept(entity);
+                if (acceptor) return acceptor;
+            }
+            return null;
+        }
+    }, {
+        key: "append",
+        value: function append(node) {
+            var body = this.outputStack[this.outputStack.length - 1];
+            if (body instanceof Array) {
+                body.push(node);
+            } else if (body instanceof node_1.default) {
+                this.append(node);
+            }
+        }
+        /**
+        Iterate over nodes in a block.  Some nodes can be modified in place, others
+        must be removed and a replacement spliced in.
+        */
+
+    }, {
+        key: "blockStatement",
+        value: function blockStatement(block) {
+            var _this2 = this;
+
+            block.body.forEach(function (n) {
+                _this2.compileNode(n);
+            });
+        }
     }, {
         key: "commandStatement",
         value: function commandStatement(command) {
             var details = Interpreter.analyzeCommand(command);
             switch (details.name) {
-                case 'attributes':
-                    this.attributes(command, details);
-                    break;
+                // case 'attributes': this.attributes(command, details); break
                 case 'box':
-                    this.box(command, details);
+                    this.box(command);
                     break;
                 case 'component':
-                    this.component(command, details);
+                    this.component(command);
                     break;
                 case 'group':
                     this.group(command, details);
@@ -6032,138 +6097,106 @@ var Interpreter = function () {
                     this.meta(command, details);
                     break;
                 case 'param':
-                    this.param(command, details);
+                    this.param(command);
                     break;
                 default:
             }
         }
-        //
-        // Commands
-        //
-
-    }, {
-        key: "attribute",
-        value: function attribute(command) {
-            var details = Interpreter.analyzeCommand(command);
-            var properties = this.convertOptions(details.options);
-            properties.unshift(node_1.default.property(node_1.default.identifier('name'), node_1.default.literal(details.name)));
-            var node = node_1.default.objectExpression(properties);
-            return node;
-        }
-    }, {
-        key: "attributes",
-        value: function attributes(command, details) {
-            var _this2 = this;
-
-            var elements = [];
-            command.body.body.forEach(function (n) {
-                elements.push(_this2.attribute(n));
-            });
-            var attributes = node_1.default.arrayExpression(elements);
-            var object = node_1.default.identifier('object');
-            var call = node_1.default.callExpression('attributes', [object, attributes]);
-            var node = node_1.default.expressionStatement(call);
-            this.output.body.push(node);
-            this.openScope(command);
-            if (command.body) this.compileNode(command.body);
-            this.closeScope();
-            this.inAttributes = false;
-        }
     }, {
         key: "box",
-        value: function box(command, details) {
-            var properties = this.convertOptions(details.options);
-            this.output.body.push(node_1.default.variableDeclaration('var', [node_1.default.variableDeclarator(node_1.default.identifier(details.id), node_1.default.callExpression('box', [node_1.default.objectExpression(properties)]))]));
+        value: function box(command) {
+            this.body().append(node_1.default.variableDeclaration('var', [node_1.default.variableDeclarator(node_1.default.identifier(command.id.name), node_1.default.callExpression('box', [this.generateOptionsObject(command)]))]));
         }
     }, {
         key: "component",
-        value: function component(command, details) {
-            this.inComponent = true;
-            var properties = this.convertOptions(details.options);
-            var isProductComponent = properties.find(function (prop) {
-                return prop.key.name === 'code';
-            });
-            // if (details.id) {
-            //   let name = Node.identifier('name')
-            //   properties.push(Node.property(name, Node.literal(details.id)))
-            // }
-            var call = node_1.default.callExpression('component', [node_1.default.identifier(this.currentParentName), node_1.default.objectExpression(properties)]);
-            var node = void 0;
-            if (isProductComponent) {
-                node = node_1.default.expressionStatement(call);
-            } else {
-                var id = node_1.default.identifier(details.id);
-                node = node_1.default.variableDeclaration('var', [node_1.default.variableDeclarator(id, call)]);
-                Object.defineProperty(id, 'referenceType', { value: 'component' });
-                this.pushToStack(id);
-            }
-            this.output.body.push(node);
-            this.inComponent = false;
+        value: function component(command) {
+            this.body().append(node_1.default.variableDeclaration('var', [node_1.default.variableDeclarator(command.id, node_1.default.callExpression('component', [this.generateOptionsObject(command)]))]));
+            Object.defineProperty(command.id, 'referenceType', { value: 'component' });
+            this.pushToStack(command.id);
+            var entity = Interpreter.entity(command);
+            this.body().append(this.accept(entity));
+            this.openScope(entity);
+            this.compileNode(command.body);
+            this.closeScope();
+        }
+    }, {
+        key: "functionDeclaration",
+        value: function functionDeclaration(node) {
+            this.outputStack.push(node.body);
+            this.stack.push([]);
+            this.compileNode(node.body);
+            this.outputStack.pop();
+            this.stack.pop();
+            this.body().append(node);
         }
     }, {
         key: "group",
         value: function group(command, details) {
+            var _this3 = this;
+
             this.inGroup = true;
-            var properties = this.convertOptions(details.options);
             var name = node_1.default.identifier('name');
-            properties.push(node_1.default.property(name, node_1.default.literal(details.id)));
             var parent = node_1.default.identifier(this.currentParentName);
-            var optionsObject = node_1.default.objectExpression(properties);
+            var optionsObject = this.generateOptionsObject(command);
             var call = node_1.default.callExpression('group', [parent, optionsObject]);
-            var id = node_1.default.identifier(details.id);
-            var declarator = node_1.default.variableDeclarator(id, call);
+            var declarator = node_1.default.variableDeclarator(command.id, call);
             var node = node_1.default.variableDeclaration('var', [declarator]);
-            this.output.body.push(node);
-            this.openScope(command);
-            this.currentParentName = details.id;
-            if (command.body) this.compileNode(command.body);
+            this.body().append(node);
+            var entity = Interpreter.entity(command);
+            this.body().append(this.accept(entity));
+            this.openScope(entity);
+            command.body.forEach(function (n) {
+                _this3.compileNode(n);
+            });
             this.closeScope();
-            this.currentParentName = 'object';
             this.inGroup = false;
+        }
+    }, {
+        key: "ifStatement",
+        value: function ifStatement(node) {
+            node.test = this.walkExpression(node.test);
+            this.compileNode(node.consequent);
+            if (node.alternate) this.compileNode(node.alternate);
+            this.append(node);
         }
     }, {
         key: "meta",
         value: function meta(command, details) {
-            var _this3 = this;
+            var _this4 = this;
 
             details.options.forEach(function (option) {
-                _this3.output.body.push(node_1.default.expressionStatement(node_1.default.assignmentExpression(node_1.default.memberExpression(node_1.default.identifier('object'), node_1.default.identifier(option.label.name)), '=', _this3.walkExpression(option.body.expression))));
+                _this4.output.body.push(node_1.default.expressionStatement(node_1.default.assignmentExpression(node_1.default.memberExpression(node_1.default.identifier('object'), node_1.default.identifier(option.label.name)), '=', _this4.walkExpression(option.body.expression))));
             });
         }
     }, {
         key: "variableDeclaration",
         value: function variableDeclaration(node) {
-            var _this4 = this;
-
-            node.declarations.forEach(function (dec) {
-                _this4.pushToStack(dec.id);
-            });
-            this.output.body.push(node);
-        }
-    }, {
-        key: "convertOptions",
-        value: function convertOptions(options) {
             var _this5 = this;
 
-            var nodes = [];
-            options.forEach(function (option) {
-                nodes.push(_this5.convertLabeledStatementToProperty(option));
+            node.declarations.forEach(function (dec) {
+                _this5.pushToStack(dec.id);
             });
-            return nodes;
+            this.currentBody.append(node);
         }
     }, {
-        key: "convertLabeledStatementToProperty",
-        value: function convertLabeledStatementToProperty(labeledStatement) {
-            var key = labeledStatement.label;
-            var value = labeledStatement.body.expression;
-            value = this.walkExpression(value);
-            if (this.isGettable) {
-                value = node_1.default.arrowFunctionExpression([], value);
-                this.isGettable = false;
-            } else if (value.type === 'Literal') {
-                value = node_1.default.literal(value.value);
+        key: "generateOptionsObject",
+        value: function generateOptionsObject(command) {
+            var i = 0,
+                properties = [];
+            var current = command.body.body[i];
+            var type = current.type;
+            while (type === 'LabeledStatement') {
+                var key = current.label;
+                var value = this.walkExpression(current.body.expression);
+                if (this.isGettable) {
+                    value = node_1.default.arrowFunctionExpression([], value);
+                    this.isGettable = false;
+                }
+                properties.push(node_1.default.property(key, value));
+                current = command.body.body[++i];
+                type = current ? current.type : null;
             }
-            return node_1.default.property(node_1.default.identifier(key.name), value);
+            return node_1.default.objectExpression(properties);
         }
     }, {
         key: "findIdentifier",
@@ -6200,14 +6233,14 @@ var Interpreter = function () {
         }
     }, {
         key: "openScope",
-        value: function openScope(context) {
-            this.context.push(context);
+        value: function openScope(entity) {
+            this.contextStack.push(entity);
             this.stack.push([]);
         }
     }, {
         key: "closeScope",
         value: function closeScope() {
-            this.context.pop();
+            this.contextStack.pop();
             this.stack.pop();
         }
     }, {
@@ -6217,25 +6250,12 @@ var Interpreter = function () {
         }
     }, {
         key: "param",
-        value: function param(command, details) {
-            var properties = this.convertOptions(details.options);
-            var name = node_1.default.identifier('name');
-            properties.push(node_1.default.property(name, node_1.default.literal(details.id)));
-            var optionsObject = node_1.default.objectExpression(properties);
-            var parent = node_1.default.identifier(this.currentParentName);
-            var call = node_1.default.callExpression('param', [parent, optionsObject]);
-            var id = node_1.default.identifier(details.id);
-            var declarator = node_1.default.variableDeclarator(id, call);
-            var node = node_1.default.variableDeclaration('var', [declarator]);
-            // Tag node as a param
-            Object.defineProperty(node, 'tagged', { value: 'param' });
-            // Tag optionsObject as 'paramOptions'
-            Object.defineProperty(optionsObject, 'tagged', { value: 'paramOptions' });
-            Object.defineProperty(id, 'referenceType', { value: 'param' });
-            this.pushToStack(id);
-            this.output.body.push(node);
-            this.inParam = true;
-            this.inParam = false;
+        value: function param(command) {
+            this.body().append(node_1.default.variableDeclaration('var', [node_1.default.variableDeclarator(command.id, node_1.default.callExpression('param', [this.generateOptionsObject(command)]))]));
+            Object.defineProperty(command.id, 'referenceType', { value: 'param' });
+            this.pushToStack(command.id);
+            var entity = Interpreter.entity(command);
+            this.body().append(this.accept(entity));
         }
         /* Push node onto scope stack. */
 
@@ -6245,6 +6265,13 @@ var Interpreter = function () {
             var scope = this.getCurrentScope();
             scope.push(node);
         }
+        // startEntity (node: Node): void {
+        //   this.contextStack.push(Interpreter.entity(node))
+        // }
+        //
+        // endEntity (): void {
+        //   this.contextStack.pop()
+        // }
         /* Walk an expression and make identifiers that reference params gettable. */
 
     }, {
@@ -6308,6 +6335,22 @@ var Interpreter = function () {
             };
         }
     }, {
+        key: "entity",
+        value: function entity(node) {
+            switch (node.name.name) {
+                case 'array':
+                    return new entities_1.ArrayEntity(node);
+                case 'component':
+                    return new entities_1.ComponentEntity(node);
+                case 'group':
+                    return new entities_1.GroupEntity(node);
+                case 'param':
+                    return new entities_1.ParamEntity(node);
+                default:
+                    return null;
+            }
+        }
+    }, {
         key: "enumerateParams",
         value: function enumerateParams(parent) {
             var result = [];
@@ -6362,6 +6405,287 @@ exports.default = Interpreter;
 
 /***/ }),
 /* 4 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+/**
+An Mscript can contain regular javascript as well as commands.  Commands
+represent the creation of some entity.  Entities can be parameters, components,
+array functions, etc.  Some entities can be declared in the context of other
+entities, so when the Mscript is compiled, the output needs auxillary statements
+to handle the relationships between entities.
+
+The Node that the constructors accept are always a CommandStatement.
+*/
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+Object.defineProperty(exports, "__esModule", { value: true });
+var node_1 = __webpack_require__(0);
+
+var Entity = function Entity(node) {
+    _classCallCheck(this, Entity);
+
+    if (node) {
+        this.id = node.id ? node.id.name : null;
+        this.type = node.name.name;
+    }
+};
+
+exports.Entity = Entity;
+/**
+ArrayEntity
+*/
+
+var ArrayEntity = function (_Entity) {
+    _inherits(ArrayEntity, _Entity);
+
+    function ArrayEntity(node) {
+        _classCallCheck(this, ArrayEntity);
+
+        return _possibleConstructorReturn(this, (ArrayEntity.__proto__ || Object.getPrototypeOf(ArrayEntity)).call(this, node));
+    }
+    /**
+    Return the statement required if the given entity can be accepted by
+    ComponentEntity.
+    */
+
+
+    _createClass(ArrayEntity, [{
+        key: "accept",
+        value: function accept(entity) {
+            switch (entity.type) {
+                case 'component':
+                    return node_1.default.expressionStatement(node_1.default.callExpression(node_1.default.memberExpression(node_1.default.identifier(this.id || 'arr'), node_1.default.identifier('push')), [node_1.default.identifier(entity.id)]));
+                default:
+                    return null;
+            }
+        }
+        /**
+        Return auxillary statements required by the given entity.
+        */
+
+    }, {
+        key: "auxillary",
+        value: function auxillary(node) {
+            return null;
+        }
+    }]);
+
+    return ArrayEntity;
+}(Entity);
+
+exports.ArrayEntity = ArrayEntity;
+/**
+Box
+*/
+
+var Box = function (_Entity2) {
+    _inherits(Box, _Entity2);
+
+    function Box(node) {
+        _classCallCheck(this, Box);
+
+        return _possibleConstructorReturn(this, (Box.__proto__ || Object.getPrototypeOf(Box)).call(this, node));
+    }
+    /**
+    Boxs cannot accept any other entities.
+    */
+
+
+    _createClass(Box, [{
+        key: "accept",
+        value: function accept(entity) {
+            return null;
+        }
+        /**
+        Box does not generate auxillary statements.
+        */
+
+    }, {
+        key: "auxillary",
+        value: function auxillary(node) {
+            return null;
+        }
+    }]);
+
+    return Box;
+}(Entity);
+/**
+ComponentEntity
+*/
+
+
+var ComponentEntity = function (_Entity3) {
+    _inherits(ComponentEntity, _Entity3);
+
+    function ComponentEntity(node) {
+        _classCallCheck(this, ComponentEntity);
+
+        return _possibleConstructorReturn(this, (ComponentEntity.__proto__ || Object.getPrototypeOf(ComponentEntity)).call(this, node));
+    }
+    /**
+    Return the statement required if the given entity can be accepted by
+    ComponentEntity.
+    */
+
+
+    _createClass(ComponentEntity, [{
+        key: "accept",
+        value: function accept(entity) {
+            if (entity.type === 'component') {
+                return node_1.default.expressionStatement(node_1.default.callExpression(node_1.default.memberExpression(node_1.default.identifier(this.id), node_1.default.identifier('add')), [node_1.default.identifier(entity.id)]));
+            } else {
+                return null;
+            }
+        }
+        /**
+        Return auxillary statements required by the given entity.
+        */
+
+    }, {
+        key: "auxillary",
+        value: function auxillary(node) {
+            return null;
+        }
+    }]);
+
+    return ComponentEntity;
+}(Entity);
+
+exports.ComponentEntity = ComponentEntity;
+/**
+ComponentEntity
+*/
+
+var GroupEntity = function (_Entity4) {
+    _inherits(GroupEntity, _Entity4);
+
+    function GroupEntity(node) {
+        _classCallCheck(this, GroupEntity);
+
+        return _possibleConstructorReturn(this, (GroupEntity.__proto__ || Object.getPrototypeOf(GroupEntity)).call(this, node));
+    }
+    /**
+    Return the statement required if the given entity can be accepted by
+    ComponentEntity.
+    */
+
+
+    _createClass(GroupEntity, [{
+        key: "accept",
+        value: function accept(entity) {
+            if (entity.type === 'component' || entity.type === 'param') {
+                return node_1.default.expressionStatement(node_1.default.callExpression(node_1.default.memberExpression(node_1.default.identifier(this.id), node_1.default.identifier('add')), [node_1.default.identifier(entity.id)]));
+            } else {
+                return null;
+            }
+        }
+        /**
+        Return auxillary statements required by the given entity.
+        */
+
+    }, {
+        key: "auxillary",
+        value: function auxillary(node) {
+            return null;
+        }
+    }]);
+
+    return GroupEntity;
+}(Entity);
+
+exports.GroupEntity = GroupEntity;
+/**
+ObjectEntity is the top level thing being built.
+*/
+
+var ObjectEntity = function (_Entity5) {
+    _inherits(ObjectEntity, _Entity5);
+
+    function ObjectEntity() {
+        _classCallCheck(this, ObjectEntity);
+
+        return _possibleConstructorReturn(this, (ObjectEntity.__proto__ || Object.getPrototypeOf(ObjectEntity)).call(this, null));
+    }
+    /**
+    Return the statement required if the given entity can be accepted by
+    ComponentEntity.
+    */
+
+
+    _createClass(ObjectEntity, [{
+        key: "accept",
+        value: function accept(entity) {
+            var type = entity.type;
+            if (type == 'component' || type === 'param') {
+                return node_1.default.expressionStatement(node_1.default.callExpression(node_1.default.memberExpression(node_1.default.identifier('object'), node_1.default.identifier('add')), [node_1.default.identifier(entity.id)]));
+            } else {
+                return null;
+            }
+        }
+        /**
+        Return auxillary statements required by the given entity.
+        */
+
+    }, {
+        key: "auxillary",
+        value: function auxillary(node) {
+            return null;
+        }
+    }]);
+
+    return ObjectEntity;
+}(Entity);
+
+exports.ObjectEntity = ObjectEntity;
+/**
+ParamEntity.
+*/
+
+var ParamEntity = function (_Entity6) {
+    _inherits(ParamEntity, _Entity6);
+
+    function ParamEntity(node) {
+        _classCallCheck(this, ParamEntity);
+
+        return _possibleConstructorReturn(this, (ParamEntity.__proto__ || Object.getPrototypeOf(ParamEntity)).call(this, node));
+    }
+    /**
+    Params cannot accept any other entities.
+    */
+
+
+    _createClass(ParamEntity, [{
+        key: "accept",
+        value: function accept(entity) {
+            return null;
+        }
+        /**
+        Return auxillary statements required by the given entity.
+        */
+
+    }, {
+        key: "auxillary",
+        value: function auxillary(node) {
+            return null;
+        }
+    }]);
+
+    return ParamEntity;
+}(Entity);
+
+exports.ParamEntity = ParamEntity;
+
+/***/ }),
+/* 5 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";

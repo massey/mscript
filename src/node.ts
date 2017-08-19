@@ -6,6 +6,17 @@ export default class Node {
      this.type = type
    }
 
+   // Append a Node to the body.  This must handle cases where a Node's body is
+   // another Node like a BlockStatement.  If it doesn't have a body,
+   // don't do anything.
+   append (node: Node): void {
+     if (this.body instanceof Array) {
+       this.body.push(node)
+     } else if (this.body instanceof Node) {
+       this.body.append(node)
+     }
+   }
+
    static arrayExpression (elements?: Array<Node>): Node {
      let node: Node = new Node('ArrayExpression')
      node.elements = elements || []
@@ -75,6 +86,24 @@ export default class Node {
      let node = new Node('ExpressionStatement')
 
      node.expression = expression
+
+     return node
+   }
+
+   static functionDeclaration
+   (
+     id: Node,
+     params: Array<Node>,
+     body: Array<Node>,
+     options?: {generator?: boolean, expression?: boolean}
+   ): Node {
+     var node = new Node('FunctionDeclaration')
+
+     node.id = id
+     node.params = params
+     node.body = body
+     node.generator = options ? options.generator || false : false
+     node.expression = options ? options.expression || false : false
 
      return node
    }

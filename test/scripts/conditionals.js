@@ -1,15 +1,16 @@
-var width = param(object, {
+var width = param({
   type: 'number',
-  value: 1000,
-  name: 'width'
+  value: 1000
 })
+object.add(width)
 
-var depth = param (object, {
+var depth = param ({
   type: 'number',
-  value: 600,
-  name: 'depth'
+  value: 600
 })
+object.add(depth)
 
-var base = component(object, {
+var base = component({
   A: () => width.get() ? 50 : depth.get()
 })
+object.add(base)
