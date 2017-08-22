@@ -53,27 +53,24 @@ block sliderHoles {
 component right {
   A: height
   B: depth
-  id: 'D'
   material: '01.002'
 }
 
 component left {
-  id: 'E'
-
-  right.mirror(0,1)
+    mirror: 'right'
+    i: 0
+    j: 1
 }
 
 component top {
     A: width - left.thickness - right.thickness
     B: depth - 1.5
-    id: 'C'
     material: '01.002'
 }
 
 component bottom {
     A: width - left.thickness - right.thickness
     B: depth - 1.5
-    id: 'B'
     material: '01.002'
 }
 
@@ -81,55 +78,36 @@ component kickPlate {
   A: bottom.A
   B: bottom.B
   material: '01.002'
-
-  face 5 {
-    array {
-      var count   = Math.ceil((width - 120) / 400)
-      var current = 60
-      var dist    = Math.floor(width / 400)
-
-      for (let i = 0; i < count: i++) {
-        circle {
-          d: 3
-          x: current - 16
-          y: kickPlate / 2
-        }
-
-        circle {
-          d: 3
-          x: current + 16
-          y: kickPlate / 2
-        }
-      }
-    }
-  }
 }
 
 component back {
     A: height - kickHeight - top.thickness - bottom.thickness
     B: width - left.thickness - right.thickness
-    id: 'A'
     material: '01.002'
 }
 
 
 // Shelves
-array {
-  for (var i = 0; i < shelfCount; i++) {
-    component {
-      A: width - left.thickness - right.thickness
-      B: depth - back.thickness - 1.5
-      material: carcasMaterial
-      name: 'shelf ' + (i + 1)
+component {
+  array {
+    shelfCount => {
+      for (var i = 0; i < shelfCount; i++) {
+        component {
+          A: width - left.thickness - right.thickness
+          B: depth - back.thickness - 1.5
+          material: '01.002'
+          name: 'shelf ' + (i + 1)
 
-      component {
-        code: '2.44'
-        quantity: 4
-      }
+          component {
+            code: '2.44'
+            quantity: 4
+          }
 
-      component {
-        code: '2.11'
-        quantity: 4
+          component {
+            code: '2.11'
+            quantity: 4
+          }
+        }
       }
     }
   }

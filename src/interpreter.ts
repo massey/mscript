@@ -8,47 +8,48 @@ import {
   ParamEntity } from './entities'
 import { ParamData, SavedData } from './types/massive'
 
+interface scope {
+  identifiers: Array<Node>,
+  entity: Entity,
+  body: Array<Node>
+}
+
 export default class Interpreter {
-  context: Array<Node>
-  contextStack: Array<Entity>
-  outputStack: Array<Node>
-  currentBody: Node
-  isGettable: Boolean
+  // isGettable: Boolean
   input: Node
   inside: string
   output: Node
   inputPos: number
   inputNode: Node
-  // parent: any
   currentParentName: string
-  // data:  SavedData
   inAttributes: Boolean
   inComponent: Boolean
-  inGroup: Boolean
-  inParam: Boolean
-  stack: Array<Array<Node>>
+  // inGroup: Boolean
+  // inParam: Boolean
+  makeGettable: Boolean
+  result: Node
+  stack: Array<scope>
+  expressionStack: Array<Node>
 
   constructor (ast: Node) {
+    this.result = Node.program()
     this.input    = ast
     this.inputPos = 0
-
-    /* Keep track of what command we're inside of. */
-    this.context = []
-    this.contextStack = [new ObjectEntity()]
-    this.currentBody = Node.program()
-    this.output = this.currentBody
-    this.outputStack = [this.currentBody]
-    this.inAttributes = this.inGroup = this.inParam = this.inComponent = false
+    // this.inAttributes = this.inGroup = this.inParam = this.inComponent = false
     this.currentParentName = 'object'
 
     /* Keep track of what type of node we're in when walking an expression. */
     this.inside = ''
 
     /* Signals if an expression needs to be wrapped in an arrow function. */
-    this.isGettable = false
+    // this.isGettable = false
 
-    /* Identifiers are kept in nested arrays. */
-    this.stack = [[]]
+    this.makeGettable = true
+
+    this.expressionStack = []
+    this.stack = [
+      { identifiers: [], entity: new ObjectEntity(), body: [this.result.body] }
+    ]
   }
 
   // Compile kicks off the interpreter.  Iterate over each node in the input
@@ -58,37 +59,28 @@ export default class Interpreter {
       this.compileNode(n)
     })
 
-    return this.output
+    return this.result
   }
 
   compileNode (node: Node): void {
     switch (node.type) {
       case 'BlockStatement': this.blockStatement(node); break
-
       case 'CommandStatement': this.commandStatement(node); break
-
+      case 'ExpressionStatement': this.expressionStatement(node); break
+      case 'ForStatement': this.forStatement(node); break
       case 'FunctionDeclaration': this.functionDeclaration(node); break
-
       case 'IfStatement': this.ifStatement(node); break
-
-      case 'VariableDeclaration':
-      this.variableDeclaration(node)
-      break
+      case 'ReturnStatement': this.returnStatement(node); break
+      case 'VariableDeclaration': this.variableDeclaration(node); break
 
       default:
     }
   }
 
-  /**
-  Return the Node to whose body statements are being added
-  */
-  body (): Node {
-    return this.outputStack[this.outputStack.length - 1]
-  }
-
-  accept (entity: Entity): Node {
-    for (let i = this.contextStack.length - 1; i >= 0; i--) {
-      var acceptor = this.contextStack[i].accept(entity)
+  /** Search the stack for the entity that will accept the given entity. */
+  accept (entity: Entity, node?: Node): Node {
+    for (let i = this.stack.length; --i >= 0;) {
+      var acceptor = this.stack[i].entity.accept(entity, node)
 
       if (acceptor) return acceptor
     }
@@ -97,11 +89,10 @@ export default class Interpreter {
   }
 
   append (node: Node): void {
-    var body = this.outputStack[this.outputStack.length - 1]
-    if (body instanceof Array) {
-      body.push(node)
-    } else if (body instanceof Node) {
-      this.append(node)
+    if (node) {
+      var scope = this.top()
+
+      scope.body[scope.body.length - 1].push(node)
     }
   }
 
@@ -120,6 +111,7 @@ export default class Interpreter {
 
     switch (details.name) {
       // case 'attributes': this.attributes(command, details); break
+      case 'array': this.array(command); break
       case 'box': this.box(command); break
       case 'component': this.component(command); break
       case 'group': this.group(command, details); break
@@ -127,12 +119,39 @@ export default class Interpreter {
       case 'param': this.param(command); break
 
       default:
+      this.defaultCommand(command)
     }
   }
 
-  box
-  (command: Node): void {
-    this.body().append(
+  array (command: Node): void {
+    var node = Node.functionExpression(null, [])
+
+    var entity = Interpreter.entity(command)
+    this.stack.push({ identifiers: [], entity, body: [node.body.body] })
+
+    this.append(
+      Node.variableDeclaration(
+        'var',
+        [
+          Node.variableDeclarator(
+            Node.identifier('arr'),
+            Node.arrayExpression()
+          )
+        ]
+      )
+    )
+
+    this.compileNode(command.body)
+
+    this.append(Node.returnStatement(Node.identifier('arr')))
+
+    this.stack.pop()
+
+    this.append(this.accept(entity, node))
+  }
+
+  box (command: Node): void {
+    this.append(
         Node.variableDeclaration(
         'var',
         [
@@ -146,76 +165,161 @@ export default class Interpreter {
   }
 
   component (command: Node): void {
-    this.body().append(
-      Node.variableDeclaration(
-        'var',
-        [Node.variableDeclarator(
-          command.id,
-          Node.callExpression(
-            'component',
-            [this.generateOptionsObject(command)]
-          )
-        )]
-      )
+    var entity = Interpreter.entity(command)
+    var call = Node.callExpression(
+      'component',
+      [this.generateOptionsObject(command)]
     )
 
-    Object.defineProperty(command.id, 'referenceType', { value: 'component' })
-    this.pushToStack(command.id)
+    if (command.id) {
+      Object.defineProperty(command.id, 'referenceType', { value: 'component' })
+      this.pushId(command.id)
+      this.append(
+        Node.variableDeclaration(
+          'var',
+          [Node.variableDeclarator(
+            command.id,
+            call
+          )]
+        )
+      )
+      this.append(this.accept(entity))
+    } else {
+      this.append(this.accept(entity, call))
+    }
 
-    var entity = Interpreter.entity(command)
-    this.body().append(this.accept(entity))
+    if (command.body) {
+      var scope = Node.functionExpression(null, [])
 
-    this.openScope(entity)
-    this.compileNode(command.body)
-    this.closeScope()
+      this.enterScope({ identifiers: [], entity, body: [scope.body.body] })
+      this.compileNode(command.body)
+      this.closeScope()
+
+      this.append(
+        Node.expressionStatement(
+          Node.callExpression(
+            scope
+          )
+        )
+      )
+    }
+  }
+
+  defaultCommand (command: Node): void {
+    var tagged = new Node()
+    tagged.tag = command.name.name
+    var options = this.generateOptionsObject(command)
+
+    for (let i = 0; i < options.properties.length; i++) {
+      var currentProperty = options.properties[i]
+      tagged[currentProperty.key.name] = currentProperty.value.value
+    }
+
+    this.append(tagged)
+  }
+
+  expressionStatement (node: Node) {
+    node.expression = this.walkExpression(node.expression)
+    this.append(node)
+  }
+
+  forStatement (node: Node): void {
+    node.test = this.walkExpression(node.test)
+
+    var block = Node.blockStatement()
+    this.top().body.push(block.body)
+    this.compileNode(node.body)
+    this.top().body.pop()
+    node.body = block
+    this.append(node)
   }
 
   functionDeclaration (node: Node): void {
-    this.outputStack.push(node.body)
-    this.stack.push([])
+    Object.defineProperty(node.id, 'referenceType', { value: 'function' })
+    this.pushId(node.id)
+    var block = Node.blockStatement()
+    this.enterScope({ identifiers: [], entity: null, body: [block.body] })
     this.compileNode(node.body)
-    this.outputStack.pop()
-    this.stack.pop()
-    this.body().append(node)
+    this.closeScope()
+    node.body = block
+    this.append(node)
   }
 
   group (command: Node, details: { id: string, options: Array<Node> }): void {
-    this.inGroup = true
-
-
-
-    let name = Node.identifier('name')
-    let parent = Node.identifier(this.currentParentName)
-    let optionsObject: Node = this.generateOptionsObject(command)
-    let call: Node = Node.callExpression('group', [parent, optionsObject])
-    let declarator = Node.variableDeclarator(command.id, call)
-    let node: Node = Node.variableDeclaration('var', [declarator])
-
-    this.body().append(node)
-
     var entity = Interpreter.entity(command)
-    this.body().append(this.accept(entity))
+    this.makeGettable = false
+    var call = Node.callExpression(
+      'group',
+      [this.generateOptionsObject(command)]
+    )
+    this.makeGettable = true
 
-    this.openScope(entity)
-    command.body.forEach((n: Node) => {
-      this.compileNode(n)
-    })
-    this.closeScope()
+    if (command.id) {
+      Object.defineProperty(command.id, 'referenceType', { value: 'group' })
+      this.pushId(command.id)
+      this.append(
+        Node.variableDeclaration(
+          'var',
+          [Node.variableDeclarator(
+            command.id,
+            call
+          )]
+        )
+      )
+      this.append(this.accept(entity))
+    } else {
+      this.append(this.accept(entity, call))
+    }
 
-    this.inGroup = false
+    if (command.body) {
+      var scope = Node.functionExpression(null, [])
+
+      this.enterScope({ identifiers: [], entity, body: [scope.body.body] })
+      this.compileNode(command.body)
+      this.closeScope()
+
+      this.append(
+        Node.expressionStatement(
+          Node.callExpression(
+            scope
+          )
+        )
+      )
+    }
   }
 
-  ifStatement (node: Node): void  {
+  ifStatement (node: Node, parent?: Node): void  {
     node.test = this.walkExpression(node.test)
+
+    var consequent = Node.blockStatement()
+    this.top().body.push(consequent.body)
     this.compileNode(node.consequent)
-    if (node.alternate) this.compileNode(node.alternate)
-    this.append(node)
+    this.top().body.pop()
+    node.consequent = consequent
+
+    if (node.alternate) {
+      if (node.alternate.type === 'BlockStatement') {
+        var alternate = Node.blockStatement()
+        this.top().body.push(alternate.body)
+        this.compileNode(node.alternate)
+        this.top().body.pop()
+        node.alternate = alternate
+      } else {
+        this.ifStatement(node.alternate, node)
+      }
+    }
+
+    if (!parent) {
+      this.append(node)
+    } else {
+      parent.alternate = node
+    }
   }
 
   meta
   (command: Node, details: {id: string, options: Array<Node> }): void {
     details.options.forEach((option: any) => {
-      this.output.body.push(
+      this.append(
         Node.expressionStatement(
           Node.assignmentExpression(
             Node.memberExpression(
@@ -230,32 +334,48 @@ export default class Interpreter {
     })
   }
 
-  variableDeclaration (node: Node): void {
-    node.declarations.forEach((dec: Node) => {
-      this.pushToStack(dec.id)
-    })
-
-    this.currentBody.append(node)
+  returnStatement (node: Node) {
+    node.argument = this.walkExpression(node.argument)
+    this.append(node)
   }
 
-  generateOptionsObject (command: Node): Node {
-    var i = 0, properties: Array<Node> = []
+  variableDeclaration (node: Node): void {
+    node.declarations.forEach((dec: Node) => {
+      this.pushId(dec.id)
+    })
 
-    var current: Node = command.body.body[i]
-    var type = current.type
-    while (type === 'LabeledStatement') {
+    this.append(node)
+  }
+
+  /**
+  Generate an object expression from the labeled statements in a command body.
+  Shift the labeled statements from the front so the proper body is left behind.
+  */
+  generateOptionsObject (command: Node): Node {
+    var properties: Array<Node> = []
+    var current: Node = command.body.body[0].type === 'LabeledStatement'
+                        ? command.body.body.shift()
+                        : null
+
+    while (current) {
       var key   = current.label
       var value = this.walkExpression(current.body.expression)
 
-      if (this.isGettable) {
+      if (value.wrapInFunction) {
         value = Node.arrowFunctionExpression([], value)
-        this.isGettable = false
+        // this.isGettable = false
       }
 
       properties.push(Node.property(key, value))
 
-      current = command.body.body[++i]
-      type = current ? current.type : null
+      if (command.body.body.length) {
+        current = command.body.body[0].type === 'LabeledStatement'
+                  ? command.body.body.shift()
+                  : null
+      } else {
+        current = null
+        command.body = null
+      }
     }
 
     return Node.objectExpression(properties)
@@ -265,8 +385,8 @@ export default class Interpreter {
     var result, id
 
     for (let i = this.stack.length; --i >= 0;) {
-      for (let j = this.stack[i].length; --j >= 0;) {
-        id = this.stack[i][j]
+      for (let j = this.stack[i].identifiers.length; --j >= 0;) {
+        id = this.stack[i].identifiers[j]
 
         if (id.name === name) {
           result = id
@@ -278,40 +398,18 @@ export default class Interpreter {
     return result
   }
 
-  getCurrentContext () {
-    return this.context[this.context.length - 1]
+  enterScope (scope: scope) {
+    this.stack.push(scope)
   }
 
-  getCurrentScope (): Array<Node> {
-    return this.stack[this.stack.length - 1]
-  }
-
-  getOptions (command: Node): Array<Node> {
-    let body: Node = command.body.body
-
-    return body.filter((option: Node) => {
-      return option.type === 'LabeledStatement'
-    })
-  }
-
-  openScope (entity: Entity): void {
-    this.contextStack.push(entity)
-    this.stack.push([])
-  }
-
-  closeScope (): void {
-    this.contextStack.pop()
-    this.stack.pop()
-  }
-
-  addIdtoCurrentScope (id: Node): void {
-    this.getCurrentScope().push(id)
+  closeScope (): scope {
+    return this.stack.pop()
   }
 
   param
   (command: Node): void {
 
-    this.body().append(
+    this.append(
       Node.variableDeclaration(
         'var',
         [Node.variableDeclarator(
@@ -325,80 +423,98 @@ export default class Interpreter {
     )
 
     Object.defineProperty(command.id, 'referenceType', { value: 'param' })
-    this.pushToStack(command.id)
+    this.pushId(command.id)
 
     var entity = Interpreter.entity(command)
-    this.body().append(this.accept(entity))
+    this.append(this.accept(entity))
   }
 
-  /* Push node onto scope stack. */
-  pushToStack (node: Node) {
-    let scope = this.getCurrentScope()
-    scope.push(node)
+  /** Push an identifier onto the top identifier array*/
+  pushId (id: Node) {
+    this.top().identifiers.push(id)
   }
 
-  // startEntity (node: Node): void {
-  //   this.contextStack.push(Interpreter.entity(node))
-  // }
-  //
-  // endEntity (): void {
-  //   this.contextStack.pop()
-  // }
+  top () {
+    return this.stack[this.stack.length - 1]
+  }
 
   /* Walk an expression and make identifiers that reference params gettable. */
   walkExpression (expr: Node): Node {
+    this.expressionStack.push(expr)
 
     switch (expr.type) {
       case 'ArrayExpression':
-      let elements: Array<Node> = []
-      expr.elements.forEach((el: Node) => {
-        elements.push(this.walkExpression(el))
-      })
+      for (let i = 0; i < expr.elements.length; i++) {
+        expr.elements[i] = this.walkExpression(expr.elements[i])
+      }
+      return this.expressionStack.pop()
+      // let elements: Array<Node> = []
+      // expr.elements.forEach((el: Node) => {
+      //   elements.push(this.walkExpression(el))
+      // })
+      //
+      // return Node.arrayExpression(elements)
 
-      return Node.arrayExpression(elements)
+      case 'AssignmentExpression':
+      expr.right = this.walkExpression(expr.right)
+      return this.expressionStack.pop()
 
       case 'BinaryExpression':
-      return Node.binaryExpression(
-        this.walkExpression(expr.left),
-        expr.operator,
-        this.walkExpression(expr.right)
+      expr.left = this.walkExpression(expr.left)
+      expr.right = this.walkExpression(expr.right)
+      return this.expressionStack.pop()
+
+      case 'CallExpression':
+      Object.defineProperty(
+        this.expressionStack[0],
+        'containsCallExpression',
+        { value: true }
       )
+      for (let i = 0; i < expr.arguments.length; i++) {
+        expr.elements[i] = this.walkExpression(expr.elements[i])
+      }
+      expr.callee = this.walkExpression(expr.callee)
+      return this.expressionStack.pop()
 
       case 'ConditionalExpression':
-      return Node.conditionalExpression(
-        this.walkExpression(expr.test),
-        this.walkExpression(expr.consequent),
-        this.walkExpression(expr.alternate)
-      )
+      expr.test = this.walkExpression(expr.test)
+      expr.consequent = this.walkExpression(expr.consequent)
+      expr.alternate = this.walkExpression(expr.alternate)
+      return this.expressionStack.pop()
 
       case 'Identifier':
       let id = this.findIdentifier(expr.name)
       if (id) {
-        if (id.referenceType === 'param') {
-          this.isGettable = true
-          return Interpreter.makeIdentifierGettable(expr)
-        } else if (id.referenceType === 'component') {
-          this.isGettable = true
+        if (id.referenceType === 'param' && this.makeGettable) {
+          this.expressionStack.pop()
+          this.expressionStack.push(Interpreter.makeIdentifierGettable(expr))
+          Object.defineProperty(
+            this.expressionStack[0],
+            'wrapInFunction',
+            { value: true }
+          )
+        } else if (id.referenceType === 'component' ||
+                   id.referenceType === 'function') {
+          Object.defineProperty(
+            this.expressionStack[0],
+            'wrapInFunction',
+            { value: true }
+          )
         }
+        return this.expressionStack.pop()
       }
-
-      return Node.identifier(expr.name)
+      return this.expressionStack.pop()
 
       case 'Literal':
-      return Node.literal(expr.value)
+      return this.expressionStack.pop()
 
       case 'MemberExpression':
-      this.inside = 'MemberExpression'
-      let node = Node.memberExpression(
-        this.walkExpression(expr.object),
-        this.walkExpression(expr.property),
-        expr.computed
-      )
-      this.inside = ''
-      return node
+      expr.object = this.walkExpression(expr.object)
+      expr.property = this.walkExpression(expr.property)
+      return this.expressionStack.pop()
 
       default:
-      return expr
+      return this.expressionStack.pop()
     }
   }
 

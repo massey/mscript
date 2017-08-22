@@ -84,7 +84,7 @@ var Node = function () {
     function Node(type) {
         _classCallCheck(this, Node);
 
-        this.type = type;
+        if (type) this.type = type;
     }
     // Append a Node to the body.  This must handle cases where a Node's body is
     // another Node like a BlockStatement.  If it doesn't have a body,
@@ -139,6 +139,13 @@ var Node = function () {
             return node;
         }
     }, {
+        key: "blockStatement",
+        value: function blockStatement() {
+            var node = new Node('BlockStatement');
+            node.body = [];
+            return node;
+        }
+    }, {
         key: "callExpression",
         value: function callExpression(callee, args) {
             var node = new Node('CallExpression');
@@ -173,6 +180,17 @@ var Node = function () {
             node.id = id;
             node.params = params;
             node.body = body;
+            node.generator = options ? options.generator || false : false;
+            node.expression = options ? options.expression || false : false;
+            return node;
+        }
+    }, {
+        key: "functionExpression",
+        value: function functionExpression(id, params, options) {
+            var node = new Node('FunctionExpression');
+            node.id = id;
+            node.params = params;
+            node.body = Node.blockStatement();
             node.generator = options ? options.generator || false : false;
             node.expression = options ? options.expression || false : false;
             return node;
@@ -234,6 +252,13 @@ var Node = function () {
             var node = new Node('Program');
             node.body = [];
             node.sourceType = 'script';
+            return node;
+        }
+    }, {
+        key: "returnStatement",
+        value: function returnStatement(argument) {
+            var node = new Node('ReturnStatement');
+            node.argument = argument;
             return node;
         }
     }, {
@@ -5983,22 +6008,18 @@ var Interpreter = function () {
     function Interpreter(ast) {
         _classCallCheck(this, Interpreter);
 
+        this.result = node_1.default.program();
         this.input = ast;
         this.inputPos = 0;
-        /* Keep track of what command we're inside of. */
-        this.context = [];
-        this.contextStack = [new entities_1.ObjectEntity()];
-        this.currentBody = node_1.default.program();
-        this.output = this.currentBody;
-        this.outputStack = [this.currentBody];
-        this.inAttributes = this.inGroup = this.inParam = this.inComponent = false;
+        // this.inAttributes = this.inGroup = this.inParam = this.inComponent = false
         this.currentParentName = 'object';
         /* Keep track of what type of node we're in when walking an expression. */
         this.inside = '';
         /* Signals if an expression needs to be wrapped in an arrow function. */
-        this.isGettable = false;
-        /* Identifiers are kept in nested arrays. */
-        this.stack = [[]];
+        // this.isGettable = false
+        this.makeGettable = true;
+        this.expressionStack = [];
+        this.stack = [{ identifiers: [], entity: new entities_1.ObjectEntity(), body: [this.result.body] }];
     }
     // Compile kicks off the interpreter.  Iterate over each node in the input
     // body, compile it and add result to the output.
@@ -6012,7 +6033,7 @@ var Interpreter = function () {
             this.input.body.forEach(function (n) {
                 _this.compileNode(n);
             });
-            return this.output;
+            return this.result;
         }
     }, {
         key: "compileNode",
@@ -6024,11 +6045,20 @@ var Interpreter = function () {
                 case 'CommandStatement':
                     this.commandStatement(node);
                     break;
+                case 'ExpressionStatement':
+                    this.expressionStatement(node);
+                    break;
+                case 'ForStatement':
+                    this.forStatement(node);
+                    break;
                 case 'FunctionDeclaration':
                     this.functionDeclaration(node);
                     break;
                 case 'IfStatement':
                     this.ifStatement(node);
+                    break;
+                case 'ReturnStatement':
+                    this.returnStatement(node);
                     break;
                 case 'VariableDeclaration':
                     this.variableDeclaration(node);
@@ -6036,20 +6066,13 @@ var Interpreter = function () {
                 default:
             }
         }
-        /**
-        Return the Node to whose body statements are being added
-        */
+        /** Search the stack for the entity that will accept the given entity. */
 
     }, {
-        key: "body",
-        value: function body() {
-            return this.outputStack[this.outputStack.length - 1];
-        }
-    }, {
         key: "accept",
-        value: function accept(entity) {
-            for (var i = this.contextStack.length - 1; i >= 0; i--) {
-                var acceptor = this.contextStack[i].accept(entity);
+        value: function accept(entity, node) {
+            for (var i = this.stack.length; --i >= 0;) {
+                var acceptor = this.stack[i].entity.accept(entity, node);
                 if (acceptor) return acceptor;
             }
             return null;
@@ -6057,11 +6080,9 @@ var Interpreter = function () {
     }, {
         key: "append",
         value: function append(node) {
-            var body = this.outputStack[this.outputStack.length - 1];
-            if (body instanceof Array) {
-                body.push(node);
-            } else if (body instanceof node_1.default) {
-                this.append(node);
+            if (node) {
+                var scope = this.top();
+                scope.body[scope.body.length - 1].push(node);
             }
         }
         /**
@@ -6084,6 +6105,9 @@ var Interpreter = function () {
             var details = Interpreter.analyzeCommand(command);
             switch (details.name) {
                 // case 'attributes': this.attributes(command, details); break
+                case 'array':
+                    this.array(command);
+                    break;
                 case 'box':
                     this.box(command);
                     break;
@@ -6100,101 +6124,186 @@ var Interpreter = function () {
                     this.param(command);
                     break;
                 default:
+                    this.defaultCommand(command);
             }
+        }
+    }, {
+        key: "array",
+        value: function array(command) {
+            var node = node_1.default.functionExpression(null, []);
+            var entity = Interpreter.entity(command);
+            this.stack.push({ identifiers: [], entity: entity, body: [node.body.body] });
+            this.append(node_1.default.variableDeclaration('var', [node_1.default.variableDeclarator(node_1.default.identifier('arr'), node_1.default.arrayExpression())]));
+            this.compileNode(command.body);
+            this.append(node_1.default.returnStatement(node_1.default.identifier('arr')));
+            this.stack.pop();
+            this.append(this.accept(entity, node));
         }
     }, {
         key: "box",
         value: function box(command) {
-            this.body().append(node_1.default.variableDeclaration('var', [node_1.default.variableDeclarator(node_1.default.identifier(command.id.name), node_1.default.callExpression('box', [this.generateOptionsObject(command)]))]));
+            this.append(node_1.default.variableDeclaration('var', [node_1.default.variableDeclarator(node_1.default.identifier(command.id.name), node_1.default.callExpression('box', [this.generateOptionsObject(command)]))]));
         }
     }, {
         key: "component",
         value: function component(command) {
-            this.body().append(node_1.default.variableDeclaration('var', [node_1.default.variableDeclarator(command.id, node_1.default.callExpression('component', [this.generateOptionsObject(command)]))]));
-            Object.defineProperty(command.id, 'referenceType', { value: 'component' });
-            this.pushToStack(command.id);
             var entity = Interpreter.entity(command);
-            this.body().append(this.accept(entity));
-            this.openScope(entity);
-            this.compileNode(command.body);
-            this.closeScope();
+            var call = node_1.default.callExpression('component', [this.generateOptionsObject(command)]);
+            if (command.id) {
+                Object.defineProperty(command.id, 'referenceType', { value: 'component' });
+                this.pushId(command.id);
+                this.append(node_1.default.variableDeclaration('var', [node_1.default.variableDeclarator(command.id, call)]));
+                this.append(this.accept(entity));
+            } else {
+                this.append(this.accept(entity, call));
+            }
+            if (command.body) {
+                var scope = node_1.default.functionExpression(null, []);
+                this.enterScope({ identifiers: [], entity: entity, body: [scope.body.body] });
+                this.compileNode(command.body);
+                this.closeScope();
+                this.append(node_1.default.expressionStatement(node_1.default.callExpression(scope)));
+            }
+        }
+    }, {
+        key: "defaultCommand",
+        value: function defaultCommand(command) {
+            var tagged = new node_1.default();
+            tagged.tag = command.name.name;
+            var options = this.generateOptionsObject(command);
+            for (var i = 0; i < options.properties.length; i++) {
+                var currentProperty = options.properties[i];
+                tagged[currentProperty.key.name] = currentProperty.value.value;
+            }
+            this.append(tagged);
+        }
+    }, {
+        key: "expressionStatement",
+        value: function expressionStatement(node) {
+            node.expression = this.walkExpression(node.expression);
+            this.append(node);
+        }
+    }, {
+        key: "forStatement",
+        value: function forStatement(node) {
+            node.test = this.walkExpression(node.test);
+            var block = node_1.default.blockStatement();
+            this.top().body.push(block.body);
+            this.compileNode(node.body);
+            this.top().body.pop();
+            node.body = block;
+            this.append(node);
         }
     }, {
         key: "functionDeclaration",
         value: function functionDeclaration(node) {
-            this.outputStack.push(node.body);
-            this.stack.push([]);
+            Object.defineProperty(node.id, 'referenceType', { value: 'function' });
+            this.pushId(node.id);
+            var block = node_1.default.blockStatement();
+            this.enterScope({ identifiers: [], entity: null, body: [block.body] });
             this.compileNode(node.body);
-            this.outputStack.pop();
-            this.stack.pop();
-            this.body().append(node);
+            this.closeScope();
+            node.body = block;
+            this.append(node);
         }
     }, {
         key: "group",
         value: function group(command, details) {
-            var _this3 = this;
-
-            this.inGroup = true;
-            var name = node_1.default.identifier('name');
-            var parent = node_1.default.identifier(this.currentParentName);
-            var optionsObject = this.generateOptionsObject(command);
-            var call = node_1.default.callExpression('group', [parent, optionsObject]);
-            var declarator = node_1.default.variableDeclarator(command.id, call);
-            var node = node_1.default.variableDeclaration('var', [declarator]);
-            this.body().append(node);
             var entity = Interpreter.entity(command);
-            this.body().append(this.accept(entity));
-            this.openScope(entity);
-            command.body.forEach(function (n) {
-                _this3.compileNode(n);
-            });
-            this.closeScope();
-            this.inGroup = false;
+            this.makeGettable = false;
+            var call = node_1.default.callExpression('group', [this.generateOptionsObject(command)]);
+            this.makeGettable = true;
+            if (command.id) {
+                Object.defineProperty(command.id, 'referenceType', { value: 'group' });
+                this.pushId(command.id);
+                this.append(node_1.default.variableDeclaration('var', [node_1.default.variableDeclarator(command.id, call)]));
+                this.append(this.accept(entity));
+            } else {
+                this.append(this.accept(entity, call));
+            }
+            if (command.body) {
+                var scope = node_1.default.functionExpression(null, []);
+                this.enterScope({ identifiers: [], entity: entity, body: [scope.body.body] });
+                this.compileNode(command.body);
+                this.closeScope();
+                this.append(node_1.default.expressionStatement(node_1.default.callExpression(scope)));
+            }
         }
     }, {
         key: "ifStatement",
-        value: function ifStatement(node) {
+        value: function ifStatement(node, parent) {
             node.test = this.walkExpression(node.test);
+            var consequent = node_1.default.blockStatement();
+            this.top().body.push(consequent.body);
             this.compileNode(node.consequent);
-            if (node.alternate) this.compileNode(node.alternate);
-            this.append(node);
+            this.top().body.pop();
+            node.consequent = consequent;
+            if (node.alternate) {
+                if (node.alternate.type === 'BlockStatement') {
+                    var alternate = node_1.default.blockStatement();
+                    this.top().body.push(alternate.body);
+                    this.compileNode(node.alternate);
+                    this.top().body.pop();
+                    node.alternate = alternate;
+                } else {
+                    this.ifStatement(node.alternate, node);
+                }
+            }
+            if (!parent) {
+                this.append(node);
+            } else {
+                parent.alternate = node;
+            }
         }
     }, {
         key: "meta",
         value: function meta(command, details) {
-            var _this4 = this;
+            var _this3 = this;
 
             details.options.forEach(function (option) {
-                _this4.output.body.push(node_1.default.expressionStatement(node_1.default.assignmentExpression(node_1.default.memberExpression(node_1.default.identifier('object'), node_1.default.identifier(option.label.name)), '=', _this4.walkExpression(option.body.expression))));
+                _this3.append(node_1.default.expressionStatement(node_1.default.assignmentExpression(node_1.default.memberExpression(node_1.default.identifier('object'), node_1.default.identifier(option.label.name)), '=', _this3.walkExpression(option.body.expression))));
             });
+        }
+    }, {
+        key: "returnStatement",
+        value: function returnStatement(node) {
+            node.argument = this.walkExpression(node.argument);
+            this.append(node);
         }
     }, {
         key: "variableDeclaration",
         value: function variableDeclaration(node) {
-            var _this5 = this;
+            var _this4 = this;
 
             node.declarations.forEach(function (dec) {
-                _this5.pushToStack(dec.id);
+                _this4.pushId(dec.id);
             });
-            this.currentBody.append(node);
+            this.append(node);
         }
+        /**
+        Generate an object expression from the labeled statements in a command body.
+        Shift the labeled statements from the front so the proper body is left behind.
+        */
+
     }, {
         key: "generateOptionsObject",
         value: function generateOptionsObject(command) {
-            var i = 0,
-                properties = [];
-            var current = command.body.body[i];
-            var type = current.type;
-            while (type === 'LabeledStatement') {
+            var properties = [];
+            var current = command.body.body[0].type === 'LabeledStatement' ? command.body.body.shift() : null;
+            while (current) {
                 var key = current.label;
                 var value = this.walkExpression(current.body.expression);
-                if (this.isGettable) {
+                if (value.wrapInFunction) {
                     value = node_1.default.arrowFunctionExpression([], value);
-                    this.isGettable = false;
+                    // this.isGettable = false
                 }
                 properties.push(node_1.default.property(key, value));
-                current = command.body.body[++i];
-                type = current ? current.type : null;
+                if (command.body.body.length) {
+                    current = command.body.body[0].type === 'LabeledStatement' ? command.body.body.shift() : null;
+                } else {
+                    current = null;
+                    command.body = null;
+                }
             }
             return node_1.default.objectExpression(properties);
         }
@@ -6203,8 +6312,8 @@ var Interpreter = function () {
         value: function findIdentifier(name) {
             var result, id;
             for (var i = this.stack.length; --i >= 0;) {
-                for (var j = this.stack[i].length; --j >= 0;) {
-                    id = this.stack[i][j];
+                for (var j = this.stack[i].identifiers.length; --j >= 0;) {
+                    id = this.stack[i].identifiers[j];
                     if (id.name === name) {
                         result = id;
                         break;
@@ -6214,102 +6323,94 @@ var Interpreter = function () {
             return result;
         }
     }, {
-        key: "getCurrentContext",
-        value: function getCurrentContext() {
-            return this.context[this.context.length - 1];
-        }
-    }, {
-        key: "getCurrentScope",
-        value: function getCurrentScope() {
-            return this.stack[this.stack.length - 1];
-        }
-    }, {
-        key: "getOptions",
-        value: function getOptions(command) {
-            var body = command.body.body;
-            return body.filter(function (option) {
-                return option.type === 'LabeledStatement';
-            });
-        }
-    }, {
-        key: "openScope",
-        value: function openScope(entity) {
-            this.contextStack.push(entity);
-            this.stack.push([]);
+        key: "enterScope",
+        value: function enterScope(scope) {
+            this.stack.push(scope);
         }
     }, {
         key: "closeScope",
         value: function closeScope() {
-            this.contextStack.pop();
-            this.stack.pop();
-        }
-    }, {
-        key: "addIdtoCurrentScope",
-        value: function addIdtoCurrentScope(id) {
-            this.getCurrentScope().push(id);
+            return this.stack.pop();
         }
     }, {
         key: "param",
         value: function param(command) {
-            this.body().append(node_1.default.variableDeclaration('var', [node_1.default.variableDeclarator(command.id, node_1.default.callExpression('param', [this.generateOptionsObject(command)]))]));
+            this.append(node_1.default.variableDeclaration('var', [node_1.default.variableDeclarator(command.id, node_1.default.callExpression('param', [this.generateOptionsObject(command)]))]));
             Object.defineProperty(command.id, 'referenceType', { value: 'param' });
-            this.pushToStack(command.id);
+            this.pushId(command.id);
             var entity = Interpreter.entity(command);
-            this.body().append(this.accept(entity));
+            this.append(this.accept(entity));
         }
-        /* Push node onto scope stack. */
+        /** Push an identifier onto the top identifier array*/
 
     }, {
-        key: "pushToStack",
-        value: function pushToStack(node) {
-            var scope = this.getCurrentScope();
-            scope.push(node);
+        key: "pushId",
+        value: function pushId(id) {
+            this.top().identifiers.push(id);
         }
-        // startEntity (node: Node): void {
-        //   this.contextStack.push(Interpreter.entity(node))
-        // }
-        //
-        // endEntity (): void {
-        //   this.contextStack.pop()
-        // }
+    }, {
+        key: "top",
+        value: function top() {
+            return this.stack[this.stack.length - 1];
+        }
         /* Walk an expression and make identifiers that reference params gettable. */
 
     }, {
         key: "walkExpression",
         value: function walkExpression(expr) {
-            var _this6 = this;
-
+            this.expressionStack.push(expr);
             switch (expr.type) {
                 case 'ArrayExpression':
-                    var elements = [];
-                    expr.elements.forEach(function (el) {
-                        elements.push(_this6.walkExpression(el));
-                    });
-                    return node_1.default.arrayExpression(elements);
+                    for (var i = 0; i < expr.elements.length; i++) {
+                        expr.elements[i] = this.walkExpression(expr.elements[i]);
+                    }
+                    return this.expressionStack.pop();
+                // let elements: Array<Node> = []
+                // expr.elements.forEach((el: Node) => {
+                //   elements.push(this.walkExpression(el))
+                // })
+                //
+                // return Node.arrayExpression(elements)
+                case 'AssignmentExpression':
+                    expr.right = this.walkExpression(expr.right);
+                    return this.expressionStack.pop();
                 case 'BinaryExpression':
-                    return node_1.default.binaryExpression(this.walkExpression(expr.left), expr.operator, this.walkExpression(expr.right));
+                    expr.left = this.walkExpression(expr.left);
+                    expr.right = this.walkExpression(expr.right);
+                    return this.expressionStack.pop();
+                case 'CallExpression':
+                    Object.defineProperty(this.expressionStack[0], 'containsCallExpression', { value: true });
+                    for (var _i = 0; _i < expr.arguments.length; _i++) {
+                        expr.elements[_i] = this.walkExpression(expr.elements[_i]);
+                    }
+                    expr.callee = this.walkExpression(expr.callee);
+                    return this.expressionStack.pop();
                 case 'ConditionalExpression':
-                    return node_1.default.conditionalExpression(this.walkExpression(expr.test), this.walkExpression(expr.consequent), this.walkExpression(expr.alternate));
+                    expr.test = this.walkExpression(expr.test);
+                    expr.consequent = this.walkExpression(expr.consequent);
+                    expr.alternate = this.walkExpression(expr.alternate);
+                    return this.expressionStack.pop();
                 case 'Identifier':
                     var id = this.findIdentifier(expr.name);
                     if (id) {
-                        if (id.referenceType === 'param') {
-                            this.isGettable = true;
-                            return Interpreter.makeIdentifierGettable(expr);
-                        } else if (id.referenceType === 'component') {
-                            this.isGettable = true;
+                        if (id.referenceType === 'param' && this.makeGettable) {
+                            this.expressionStack.pop();
+                            this.expressionStack.push(Interpreter.makeIdentifierGettable(expr));
+                            Object.defineProperty(this.expressionStack[0], 'wrapInFunction', { value: true });
+                        } else if (id.referenceType === 'component' || id.referenceType === 'function') {
+                            Object.defineProperty(this.expressionStack[0], 'wrapInFunction', { value: true });
                         }
+                        return this.expressionStack.pop();
                     }
-                    return node_1.default.identifier(expr.name);
+                    return this.expressionStack.pop();
                 case 'Literal':
-                    return node_1.default.literal(expr.value);
+                    return this.expressionStack.pop();
                 case 'MemberExpression':
-                    this.inside = 'MemberExpression';
-                    var node = node_1.default.memberExpression(this.walkExpression(expr.object), this.walkExpression(expr.property), expr.computed);
-                    this.inside = '';
-                    return node;
+                    expr.object = this.walkExpression(expr.object);
+                    expr.property = this.walkExpression(expr.property);
+                    return this.expressionStack.pop();
                 default:
-                    return expr;
+                    return this.expressionStack.pop();
             }
         }
         /* Static methods */
@@ -6460,10 +6561,10 @@ var ArrayEntity = function (_Entity) {
 
     _createClass(ArrayEntity, [{
         key: "accept",
-        value: function accept(entity) {
+        value: function accept(entity, node) {
             switch (entity.type) {
                 case 'component':
-                    return node_1.default.expressionStatement(node_1.default.callExpression(node_1.default.memberExpression(node_1.default.identifier(this.id || 'arr'), node_1.default.identifier('push')), [node_1.default.identifier(entity.id)]));
+                    return node_1.default.expressionStatement(node_1.default.callExpression(node_1.default.memberExpression(node_1.default.identifier(this.id || 'arr'), node_1.default.identifier('push')), [node || node_1.default.identifier(entity.id)]));
                 default:
                     return null;
             }
@@ -6502,7 +6603,7 @@ var Box = function (_Entity2) {
 
     _createClass(Box, [{
         key: "accept",
-        value: function accept(entity) {
+        value: function accept(entity, node) {
             return null;
         }
         /**
@@ -6539,9 +6640,9 @@ var ComponentEntity = function (_Entity3) {
 
     _createClass(ComponentEntity, [{
         key: "accept",
-        value: function accept(entity) {
+        value: function accept(entity, node) {
             if (entity.type === 'component') {
-                return node_1.default.expressionStatement(node_1.default.callExpression(node_1.default.memberExpression(node_1.default.identifier(this.id), node_1.default.identifier('add')), [node_1.default.identifier(entity.id)]));
+                return node_1.default.expressionStatement(node_1.default.callExpression(node_1.default.memberExpression(node_1.default.identifier(this.id), node_1.default.identifier('add')), [node || node_1.default.identifier(entity.id)]));
             } else {
                 return null;
             }
@@ -6575,13 +6676,13 @@ var GroupEntity = function (_Entity4) {
     }
     /**
     Return the statement required if the given entity can be accepted by
-    ComponentEntity.
+    GroupEntity.
     */
 
 
     _createClass(GroupEntity, [{
         key: "accept",
-        value: function accept(entity) {
+        value: function accept(entity, node) {
             if (entity.type === 'component' || entity.type === 'param') {
                 return node_1.default.expressionStatement(node_1.default.callExpression(node_1.default.memberExpression(node_1.default.identifier(this.id), node_1.default.identifier('add')), [node_1.default.identifier(entity.id)]));
             } else {
@@ -6617,16 +6718,16 @@ var ObjectEntity = function (_Entity5) {
     }
     /**
     Return the statement required if the given entity can be accepted by
-    ComponentEntity.
+    Object.
     */
 
 
     _createClass(ObjectEntity, [{
         key: "accept",
-        value: function accept(entity) {
+        value: function accept(entity, node) {
             var type = entity.type;
-            if (type == 'component' || type === 'param') {
-                return node_1.default.expressionStatement(node_1.default.callExpression(node_1.default.memberExpression(node_1.default.identifier('object'), node_1.default.identifier('add')), [node_1.default.identifier(entity.id)]));
+            if (type === 'component' || type === 'param' || type === 'array' || type === 'group') {
+                return node_1.default.expressionStatement(node_1.default.callExpression(node_1.default.memberExpression(node_1.default.identifier('object'), node_1.default.identifier('add')), [node || node_1.default.identifier(entity.id)]));
             } else {
                 return null;
             }
@@ -6665,7 +6766,7 @@ var ParamEntity = function (_Entity6) {
 
     _createClass(ParamEntity, [{
         key: "accept",
-        value: function accept(entity) {
+        value: function accept(entity, node) {
             return null;
         }
         /**

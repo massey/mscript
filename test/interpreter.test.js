@@ -5,6 +5,7 @@ const Interpreter = require('../dist/interpreter.js').default
 const Node        = require('../dist/node.js').default
 const parse       = require('acorn').parse
 const helpers     = require('./helpers.js')
+const esotope = require('esotope')
 
 /* Here we instantiate a new Interpreter and check it's initial state, run a
  * few methods to see how the state changes. */
@@ -15,9 +16,9 @@ describe('Interpreter state and some member methods', () => {
     expect(i.stack.length).toBe(1);
   })
 
-  test('contextStack length should be 1', () => {
-    expect(i.contextStack.length).toBe(1);
-  })
+  // test('contextStack length should be 1', () => {
+  //   expect(i.contextStack.length).toBe(1);
+  // })
 })
 
 describe('Interpreter static methods', () => {
@@ -37,7 +38,7 @@ describe('Interpreter static methods', () => {
 const input   = fs.readFileSync(path.resolve(__dirname, './scripts/dead_simple.ms'), 'utf-8')
 const ast     = parse(input)
 
-const command = ast.body[0]
+const command = JSON.parse(JSON.stringify(ast.body[0]))
 
 const ii      = new Interpreter(ast)
 const output  = ii.compile()
@@ -162,13 +163,18 @@ function astEquality (ms, js) {
 }
 
 describe('Interpreter', () => {
-  describe('should generate the expected AST', () => {
+  describe('should generate the expected AST from', () => {
     test('a simple mscript', () => {
       astEquality('./scripts/simple.ms', './scripts/simple.js')
     })
 
     test('a script with some member expressions', () => {
-      astEquality('./scripts/members.ms', './scripts/members.js')
+        let input    = fs.readFileSync(path.resolve(__dirname, './scripts/members.ms'), 'utf-8')
+        let ast      = mscriptAST(input)
+        let expected = fs.readFileSync(path.resolve(__dirname, './scripts/members.js'), 'utf-8')
+        let expAST   = parse(expected)
+
+        expect(helpers.stripLocations(ast)).toEqual(helpers.stripLocations(expAST))
     })
 
     test('a script with some conditionals', () => {
@@ -178,5 +184,45 @@ describe('Interpreter', () => {
     test('a script with some brackets ', () => {
       astEquality('./scripts/brackets.ms', './scripts/brackets.js')
     })
+
+    test('a script with an array function', () => {
+      astEquality('./scripts/array-function-0.ms', './scripts/array-function-0.js')
+    })
+
+    test('a script with an array function 1', () => {
+      astEquality('./scripts/array-function-1.ms', './scripts/array-function-1.js')
+    })
+
+    test('a script with nested components', () => {
+      astEquality('./scripts/nested-components.ms', './scripts/nested-components.js')
+    })
+
+    test('a script with a group', () => {
+      astEquality('./scripts/group.ms', './scripts/group.js')
+    })
+
+    test('a script with a tag', () => {
+      let input    = fs.readFileSync(path.resolve(__dirname, './scripts/tag.ms'), 'utf-8')
+      let ast      = mscriptAST(input)
+      let expAST   = Node.program()
+      expAST.body.push({ tag: 'product', code: 'test'})
+
+      console.log(inspect(ast, { depth: null, colors: true }))
+
+      expect(helpers.stripLocations(ast)).toEqual(helpers.stripLocations(expAST))
+    })
+
+    // test('a script with nested components', () => {
+    //   let input    = fs.readFileSync(path.resolve(__dirname, './scripts/array-function-1.ms'), 'utf-8')
+    //   let ast      = mscriptAST(input)
+    //   let expected = fs.readFileSync(path.resolve(__dirname, './scripts/array-function-1.js'), 'utf-8')
+    //   let expAST   = parse(expected)
+    //
+    //   // console.log(inspect(ast, { depth: null, colors: true }))
+    //   console.log(esotope.generate(ast))
+    //   console.log(esotope.generate(expAST))
+    //
+    //   expect(helpers.stripLocations(ast)).toEqual(helpers.stripLocations(expAST))
+    // })
   })
 })

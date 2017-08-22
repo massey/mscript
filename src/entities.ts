@@ -21,7 +21,7 @@ abstract class Entity {
     }
   }
 
-  abstract accept (entity: Entity): Node
+  abstract accept (entity: Entity, node?: Node): Node
   abstract auxillary (entity: Entity): Node
 }
 
@@ -37,7 +37,7 @@ class ArrayEntity extends Entity {
   Return the statement required if the given entity can be accepted by
   ComponentEntity.
   */
-  accept (entity: Entity): Node {
+  accept (entity: Entity, node?: Node): Node {
     switch (entity.type) {
       case 'component':
       return Node.expressionStatement(
@@ -46,7 +46,7 @@ class ArrayEntity extends Entity {
             Node.identifier(this.id || 'arr'),
             Node.identifier('push')
           ),
-          [Node.identifier(entity.id)]
+          [node || Node.identifier(entity.id)]
         )
       )
 
@@ -74,7 +74,7 @@ class Box extends Entity {
   /**
   Boxs cannot accept any other entities.
   */
-  accept (entity: Entity): Node {
+  accept (entity: Entity, node?: Node): Node {
     return null
   }
 
@@ -98,7 +98,7 @@ class ComponentEntity extends Entity {
   Return the statement required if the given entity can be accepted by
   ComponentEntity.
   */
-  accept (entity: Entity): Node {
+  accept (entity: Entity, node?: Node): Node {
     if (entity.type === 'component') {
       return Node.expressionStatement(
         Node.callExpression(
@@ -106,7 +106,7 @@ class ComponentEntity extends Entity {
             Node.identifier(this.id),
             Node.identifier('add')
           ),
-          [Node.identifier(entity.id)]
+          [node || Node.identifier(entity.id)]
         )
       )
     } else {
@@ -132,9 +132,9 @@ class GroupEntity extends Entity {
 
   /**
   Return the statement required if the given entity can be accepted by
-  ComponentEntity.
+  GroupEntity.
   */
-  accept (entity: Entity): Node {
+  accept (entity: Entity, node?: Node): Node {
     if (entity.type === 'component' || entity.type === 'param') {
       return Node.expressionStatement(
         Node.callExpression(
@@ -170,18 +170,19 @@ class ObjectEntity extends Entity {
 
   /**
   Return the statement required if the given entity can be accepted by
-  ComponentEntity.
+  Object.
   */
-  accept (entity: Entity): Node {
+  accept (entity: Entity, node?: Node): Node {
     var type = entity.type
-    if (type == 'component' || type === 'param') {
+    if (type === 'component' || type === 'param' || type === 'array' ||
+        type === 'group') {
       return Node.expressionStatement(
         Node.callExpression(
           Node.memberExpression(
             Node.identifier('object'),
             Node.identifier('add')
           ),
-          [Node.identifier(entity.id)]
+          [node || Node.identifier(entity.id)]
         )
       )
     } else {
@@ -208,7 +209,7 @@ class ParamEntity extends Entity {
   /**
   Params cannot accept any other entities.
   */
-  accept (entity: Entity): Node {
+  accept (entity: Entity, node?: Node): Node {
     return null
   }
 

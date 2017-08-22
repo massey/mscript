@@ -59,17 +59,15 @@ box carcasInternal {
 //
 // Computed params
 //
-computed drawRunner {
+computed drawRunnerCode {
   var depth = carcasInternal.b
 
   if (depth < 450) {
-    return drawerRunner450
+    return 'code450'
   } else if (depth < 500) {
-    return drawerRunner500
+    return 'code500'
   } else if (depth < 550) {
-    return drawerRunner550
-  } else if (depth < 600) {
-    return drawerRunner600
+    return 'code550'
   }
 }
 
@@ -161,30 +159,27 @@ component left {
   j: 1
 }
 
-// Drawers
-array {
-  drawerHeights.split(' ').forEach((h, index) => {
-    component drawer {
-      name: 'drawer' + index
-
-      component drawerFace {
+component drawers {
+  array {
+    drawerHeights.split(' ').forEach((h, index) => {
+      component {
         A: h - 2 * radius
         B: width - 2 * radius
         material: carcasMaterial
-        name: 'drawer' + index + 'face'
-      }
-
-      component drawerBack {
-        A: h - 2 * radius
-        B: width - 2 * radius
-        material: carcasMaterial
-        name: 'drawer' + index + 'back'
+        name: 'drawer' + num + 'face'
       }
 
       component {
-        product: drawerRunnerCode
+        A: h - 2 * radius
+        B: width - 2 * radius
+        material: carcasMaterial
+        name: 'drawer' + num + 'back'
+      }
+
+      component {
+        code: drawerRunnerCode
         quantity: 2
       }
-    }
-  })
+    })
+  }
 }

@@ -2,8 +2,8 @@ export default class Node {
   type: string
   [propName: string]: any
 
-   constructor (type: string) {
-     this.type = type
+   constructor (type?: string) {
+     if (type) this.type = type
    }
 
    // Append a Node to the body.  This must handle cases where a Node's body is
@@ -57,6 +57,14 @@ export default class Node {
      return node
    }
 
+   static blockStatement (): Node {
+     var node: Node = new Node('BlockStatement')
+
+     node.body = []
+
+     return node
+   }
+
    static callExpression (callee: any, args?: Array<Node>): Node {
      let node = new Node('CallExpression')
 
@@ -102,6 +110,24 @@ export default class Node {
      node.id = id
      node.params = params
      node.body = body
+     node.generator = options ? options.generator || false : false
+     node.expression = options ? options.expression || false : false
+
+     return node
+   }
+
+   static
+   functionExpression
+   (
+     id: Node,
+     params: Array<Node>,
+     options?: {generator?: boolean, expression?: boolean}
+   ): Node {
+     var node = new Node('FunctionExpression')
+
+     node.id = id
+     node.params = params
+     node.body = Node.blockStatement()
      node.generator = options ? options.generator || false : false
      node.expression = options ? options.expression || false : false
 
@@ -166,6 +192,14 @@ export default class Node {
      let node = new Node('Program')
      node.body = []
      node.sourceType = 'script'
+
+     return node
+   }
+
+   static returnStatement (argument: Node): Node {
+     var node = new Node('ReturnStatement')
+
+     node.argument = argument
 
      return node
    }
