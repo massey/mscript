@@ -197,8 +197,21 @@ describe('Interpreter', () => {
       astEquality('./scripts/nested-components.ms', './scripts/nested-components.js')
     })
 
+    // test('a script with a group', () => {
+    //   astEquality('./scripts/group.ms', './scripts/group.js')
+    // })
+
     test('a script with a group', () => {
-      astEquality('./scripts/group.ms', './scripts/group.js')
+      let input    = fs.readFileSync(path.resolve(__dirname, './scripts/group.ms'), 'utf-8')
+      let ast      = mscriptAST(input)
+      let expected = fs.readFileSync(path.resolve(__dirname, './scripts/group.js'), 'utf-8')
+      let expAST   = parse(expected)
+
+      // console.log(inspect(ast, { depth: null, colors: true }))
+      console.log('int', esotope.generate(ast))
+      console.log(esotope.generate(expAST))
+
+      expect(helpers.stripLocations(ast)).toEqual(helpers.stripLocations(expAST))
     })
 
     test('a script with a tag', () => {
@@ -210,21 +223,21 @@ describe('Interpreter', () => {
       expect(helpers.stripLocations(ast)).toEqual(helpers.stripLocations(expAST))
     })
 
-    // test('an example script', () => {
-    //   astEquality('./scripts/example.ms', './scripts/example.js')
-    // })
-
     test('an example script', () => {
-      let input    = fs.readFileSync(path.resolve(__dirname, './scripts/example.ms'), 'utf-8')
-      let ast      = mscriptAST(input)
-      let expected = fs.readFileSync(path.resolve(__dirname, './scripts/example.js'), 'utf-8')
-      let expAST   = parse(expected)
-
-      // console.log(inspect(ast, { depth: null, colors: true }))
-      console.log(esotope.generate(ast))
-      // console.log(esotope.generate(expAST))
-
-      expect(helpers.stripLocations(ast)).toEqual(helpers.stripLocations(expAST))
+      astEquality('./scripts/example.ms', './scripts/example.js')
     })
+
+    // test('an example script', () => {
+    //   let input    = fs.readFileSync(path.resolve(__dirname, './scripts/example.ms'), 'utf-8')
+    //   let ast      = mscriptAST(input)
+    //   let expected = fs.readFileSync(path.resolve(__dirname, './scripts/example.js'), 'utf-8')
+    //   let expAST   = parse(expected)
+    //
+    //   // console.log(inspect(ast, { depth: null, colors: true }))
+    //   console.log(esotope.generate(ast))
+    //   // console.log(esotope.generate(expAST))
+    //
+    //   expect(helpers.stripLocations(ast)).toEqual(helpers.stripLocations(expAST))
+    // })
   })
 })

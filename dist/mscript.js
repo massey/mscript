@@ -6252,19 +6252,29 @@ var Interpreter = function () {
             var call = node_1.default.callExpression('group', [this.generateOptionsObject(command)]);
             this.makeGettable = true;
             this.functionWrap = true;
+            var scope;
             if (command.id) {
                 Object.defineProperty(command.id, 'referenceType', { value: 'group' });
                 this.pushId(command.id);
                 this.append(node_1.default.variableDeclaration('var', [node_1.default.variableDeclarator(command.id, call)]));
                 this.append(this.accept(entity));
             } else {
-                this.append(this.accept(entity, call));
+                var id = command.name.name + '_' + this.stack.length;
+                scope = node_1.default.functionExpression(null, []);
+                entity.id = id;
+                command.id = node_1.default.identifier(id);
+                Object.defineProperty(command.id, 'referenceType', { value: 'group' });
+                this.pushId(command.id);
+                scope.body.body.push(node_1.default.variableDeclaration('var', [node_1.default.variableDeclarator(command.id, call)]));
+                scope.body.body.push(this.accept(entity));
             }
             if (command.body) {
-                var scope = node_1.default.functionExpression(null, []);
+                scope = scope || node_1.default.functionExpression(null, []);
                 this.enterScope({ identifiers: [], entity: entity, body: [scope.body.body], expression: [] });
                 this.compileNode(command.body);
                 this.closeScope();
+            }
+            if (scope) {
                 this.append(node_1.default.expressionStatement(node_1.default.callExpression(scope)));
             }
         }

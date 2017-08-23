@@ -275,6 +275,7 @@ export default class Interpreter {
     this.makeGettable = true
     this.functionWrap = true
 
+    var scope
     if (command.id) {
       Object.defineProperty(command.id, 'referenceType', { value: 'group' })
       this.pushId(command.id)
@@ -289,16 +290,32 @@ export default class Interpreter {
       )
       this.append(this.accept(entity))
     } else {
-      this.append(this.accept(entity, call))
+      let id = command.name.name + '_'  + this.stack.length
+      scope = Node.functionExpression(null, [])
+      entity.id = id
+      command.id = Node.identifier(id)
+      Object.defineProperty(command.id, 'referenceType', { value: 'group' })
+      this.pushId(command.id)
+      scope.body.body.push(
+        Node.variableDeclaration(
+          'var',
+          [Node.variableDeclarator(
+            command.id,
+            call
+          )]
+        )
+      )
+      scope.body.body.push(this.accept(entity))
     }
 
     if (command.body) {
-      var scope = Node.functionExpression(null, [])
+      scope = scope || Node.functionExpression(null, [])
 
       this.enterScope({ identifiers: [], entity, body: [scope.body.body], expression: [] })
       this.compileNode(command.body)
       this.closeScope()
-
+    }
+    if (scope) {
       this.append(
         Node.expressionStatement(
           Node.callExpression(

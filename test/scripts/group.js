@@ -17,17 +17,18 @@ var all = group({
   name: 'all',
   members: [benchtopMaterial, benchtopHeight]
 })
-object.add(all)
+object.add(all);
 
 (function () {
-  var _test = group({
+  var group_1 = group({
     name: 'test'
   })
-  object.add(_test);
+  object.add(group_1);
+
   var testParam = param({
     name: 'testParam',
     type: 'number',
     value: 1000
-  })
-  _test.add(testParam)
+  });
+  group_1.add(testParam)
 })()
