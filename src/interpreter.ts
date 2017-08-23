@@ -209,6 +209,7 @@ export default class Interpreter {
   defaultCommand (command: Node): void {
     var tagged = new Node()
     tagged.tag = command.name.name
+    if (command.id) tagged.id = command.id.name
     var options = this.generateOptionsObject(command)
 
     for (let i = 0; i < options.properties.length; i++) {

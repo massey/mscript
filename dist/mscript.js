@@ -6189,6 +6189,7 @@ var Interpreter = function () {
         value: function defaultCommand(command) {
             var tagged = new node_1.default();
             tagged.tag = command.name.name;
+            if (command.id) tagged.id = command.id.name;
             var options = this.generateOptionsObject(command);
             for (var i = 0; i < options.properties.length; i++) {
                 var currentProperty = options.properties[i];

@@ -218,7 +218,7 @@ describe('Interpreter', () => {
       let input    = fs.readFileSync(path.resolve(__dirname, './scripts/tag.ms'), 'utf-8')
       let ast      = mscriptAST(input)
       let expAST   = Node.program()
-      expAST.body.push({ tag: 'product', code: 'test'})
+      expAST.body.push({ tag: 'product', code: 'test', id: 'carcas' })
 
       expect(helpers.stripLocations(ast)).toEqual(helpers.stripLocations(expAST))
     })
