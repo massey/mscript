@@ -18,3 +18,16 @@ var all = group({
   members: [benchtopMaterial, benchtopHeight]
 })
 object.add(all)
+
+(function () {
+  var _test = group({
+    name: 'test'
+  })
+  object.add(_test);
+  var testParam = param({
+    name: 'testParam',
+    type: 'number',
+    value: 1000
+  })
+  _test.add(testParam)
+})()

@@ -15,3 +15,13 @@ group all {
   name: 'all'
   members: [benchtopMaterial, benchtopHeight]
 }
+
+group {
+  name: 'test'
+
+  param testParam {
+    name: 'testParam'
+    type: 'number'
+    value: 1000
+  }
+}
