@@ -6005,22 +6005,13 @@ var node_1 = __webpack_require__(0);
 var entities_1 = __webpack_require__(4);
 
 var Interpreter = function () {
-    // expressionStack: Array<Node>
     function Interpreter(ast) {
         _classCallCheck(this, Interpreter);
 
         this.result = node_1.default.program();
         this.input = ast;
-        this.inputPos = 0;
-        // this.inAttributes = this.inGroup = this.inParam = this.inComponent = false
-        this.currentParentName = 'object';
-        /* Keep track of what type of node we're in when walking an expression. */
-        this.inside = '';
-        /* Signals if an expression needs to be wrapped in an arrow function. */
-        // this.isGettable = false
         this.makeGettable = true;
         this.functionWrap = true;
-        // this.expressionStack = []
         this.stack = [{
             identifiers: [],
             entity: new entities_1.ObjectEntity(),
@@ -6131,7 +6122,6 @@ var Interpreter = function () {
         value: function commandStatement(command) {
             var details = Interpreter.analyzeCommand(command);
             switch (details.name) {
-                // case 'attributes': this.attributes(command, details); break
                 case 'array':
                     this.array(command);
                     break;

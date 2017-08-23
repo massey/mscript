@@ -16,40 +16,17 @@ interface scope {
 }
 
 export default class Interpreter {
-  // isGettable: Boolean
   input: Node
-  inside: string
-  output: Node
-  inputPos: number
-  inputNode: Node
-  currentParentName: string
-  inAttributes: Boolean
-  inComponent: Boolean
-  // inGroup: Boolean
-  // inParam: Boolean
   functionWrap: Boolean
   makeGettable: Boolean
   result: Node
   stack: Array<scope>
-  // expressionStack: Array<Node>
 
   constructor (ast: Node) {
     this.result = Node.program()
     this.input    = ast
-    this.inputPos = 0
-    // this.inAttributes = this.inGroup = this.inParam = this.inComponent = false
-    this.currentParentName = 'object'
-
-    /* Keep track of what type of node we're in when walking an expression. */
-    this.inside = ''
-
-    /* Signals if an expression needs to be wrapped in an arrow function. */
-    // this.isGettable = false
-
     this.makeGettable = true
     this.functionWrap = true
-
-    // this.expressionStack = []
     this.stack = [{
       identifiers: [],
       entity: new ObjectEntity(),
@@ -132,7 +109,6 @@ export default class Interpreter {
     let details = Interpreter.analyzeCommand(command)
 
     switch (details.name) {
-      // case 'attributes': this.attributes(command, details); break
       case 'array': this.array(command); break
       case 'box': this.box(command); break
       case 'component': this.component(command); break
