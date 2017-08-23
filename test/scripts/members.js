@@ -18,3 +18,5 @@ var back = component({
   name: 'back'
 })
 object.add(back)
+
+width.get().split().forEach()

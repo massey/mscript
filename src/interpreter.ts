@@ -11,7 +11,8 @@ import { ParamData, SavedData } from './types/massive'
 interface scope {
   identifiers: Array<Node>,
   entity: Entity,
-  body: Array<Node>
+  body: Array<Node>,
+  expression: Array<Node>
 }
 
 export default class Interpreter {
@@ -26,10 +27,11 @@ export default class Interpreter {
   inComponent: Boolean
   // inGroup: Boolean
   // inParam: Boolean
+  functionWrap: Boolean
   makeGettable: Boolean
   result: Node
   stack: Array<scope>
-  expressionStack: Array<Node>
+  // expressionStack: Array<Node>
 
   constructor (ast: Node) {
     this.result = Node.program()
@@ -45,11 +47,15 @@ export default class Interpreter {
     // this.isGettable = false
 
     this.makeGettable = true
+    this.functionWrap = true
 
-    this.expressionStack = []
-    this.stack = [
-      { identifiers: [], entity: new ObjectEntity(), body: [this.result.body] }
-    ]
+    // this.expressionStack = []
+    this.stack = [{
+      identifiers: [],
+      entity: new ObjectEntity(),
+      body: [this.result.body],
+      expression: []
+    }]
   }
 
   // Compile kicks off the interpreter.  Iterate over each node in the input
@@ -64,6 +70,7 @@ export default class Interpreter {
 
   compileNode (node: Node): void {
     switch (node.type) {
+      case 'ArrowFunctionExpression': this.arrowFunctionExpression(node); break
       case 'BlockStatement': this.blockStatement(node); break
       case 'CommandStatement': this.commandStatement(node); break
       case 'ExpressionStatement': this.expressionStatement(node); break
@@ -80,6 +87,7 @@ export default class Interpreter {
   /** Search the stack for the entity that will accept the given entity. */
   accept (entity: Entity, node?: Node): Node {
     for (let i = this.stack.length; --i >= 0;) {
+      if (this.stack[i].entity === null) continue
       var acceptor = this.stack[i].entity.accept(entity, node)
 
       if (acceptor) return acceptor
@@ -94,6 +102,20 @@ export default class Interpreter {
 
       scope.body[scope.body.length - 1].push(node)
     }
+  }
+
+  /** Arrow functions are not appended as they are return by walkExpression()*/
+  arrowFunctionExpression (node: Node): void {
+    var block = Node.blockStatement()
+    this.enterScope({
+      identifiers: [],
+      entity: null,
+      body: [block.body],
+      expression: []
+    })
+    this.compileNode(node.body)
+    this.closeScope()
+    node.body = block
   }
 
   /**
@@ -127,7 +149,7 @@ export default class Interpreter {
     var node = Node.functionExpression(null, [])
 
     var entity = Interpreter.entity(command)
-    this.stack.push({ identifiers: [], entity, body: [node.body.body] })
+    this.stack.push({ identifiers: [], entity, body: [node.body.body], expression: [] })
 
     this.append(
       Node.variableDeclaration(
@@ -151,12 +173,15 @@ export default class Interpreter {
   }
 
   box (command: Node): void {
+    Object.defineProperty(command.id, 'referenceType', { value: 'geometry' })
+    this.pushId(command.id)
+
     this.append(
         Node.variableDeclaration(
         'var',
         [
           Node.variableDeclarator(
-            Node.identifier(command.id.name),
+            command.id,
             Node.callExpression('box', [this.generateOptionsObject(command)])
           )
         ]
@@ -191,7 +216,7 @@ export default class Interpreter {
     if (command.body) {
       var scope = Node.functionExpression(null, [])
 
-      this.enterScope({ identifiers: [], entity, body: [scope.body.body] })
+      this.enterScope({ identifiers: [], entity, body: [scope.body.body], expression: [] })
       this.compileNode(command.body)
       this.closeScope()
 
@@ -234,11 +259,29 @@ export default class Interpreter {
     this.append(node)
   }
 
+  findIdentifier (name: string): Node {
+    var result, id, _break = false
+
+    for (let i = this.stack.length; (--i >= 0) && !_break;) {
+      for (let j = this.stack[i].identifiers.length; --j >= 0;) {
+        id = this.stack[i].identifiers[j]
+
+        if (id.name === name) {
+          result = id
+          _break = true
+          break
+        }
+      }
+    }
+
+    return result
+  }
+
   functionDeclaration (node: Node): void {
     Object.defineProperty(node.id, 'referenceType', { value: 'function' })
     this.pushId(node.id)
     var block = Node.blockStatement()
-    this.enterScope({ identifiers: [], entity: null, body: [block.body] })
+    this.enterScope({ identifiers: [], entity: null, body: [block.body], expression: [] })
     this.compileNode(node.body)
     this.closeScope()
     node.body = block
@@ -248,11 +291,13 @@ export default class Interpreter {
   group (command: Node, details: { id: string, options: Array<Node> }): void {
     var entity = Interpreter.entity(command)
     this.makeGettable = false
+    this.functionWrap = false
     var call = Node.callExpression(
       'group',
       [this.generateOptionsObject(command)]
     )
     this.makeGettable = true
+    this.functionWrap = true
 
     if (command.id) {
       Object.defineProperty(command.id, 'referenceType', { value: 'group' })
@@ -274,7 +319,7 @@ export default class Interpreter {
     if (command.body) {
       var scope = Node.functionExpression(null, [])
 
-      this.enterScope({ identifiers: [], entity, body: [scope.body.body] })
+      this.enterScope({ identifiers: [], entity, body: [scope.body.body], expression: [] })
       this.compileNode(command.body)
       this.closeScope()
 
@@ -381,23 +426,6 @@ export default class Interpreter {
     return Node.objectExpression(properties)
   }
 
-  findIdentifier (name: string): Node {
-    var result, id
-
-    for (let i = this.stack.length; --i >= 0;) {
-      for (let j = this.stack[i].identifiers.length; --j >= 0;) {
-        id = this.stack[i].identifiers[j]
-
-        if (id.name === name) {
-          result = id
-          break
-        }
-      }
-    }
-
-    return result
-  }
-
   enterScope (scope: scope) {
     this.stack.push(scope)
   }
@@ -440,81 +468,83 @@ export default class Interpreter {
 
   /* Walk an expression and make identifiers that reference params gettable. */
   walkExpression (expr: Node): Node {
-    this.expressionStack.push(expr)
+    var stack = this.top().expression
+    stack.push(expr)
 
     switch (expr.type) {
       case 'ArrayExpression':
       for (let i = 0; i < expr.elements.length; i++) {
         expr.elements[i] = this.walkExpression(expr.elements[i])
       }
-      return this.expressionStack.pop()
-      // let elements: Array<Node> = []
-      // expr.elements.forEach((el: Node) => {
-      //   elements.push(this.walkExpression(el))
-      // })
-      //
-      // return Node.arrayExpression(elements)
+      return stack.pop()
+
+      case 'ArrowFunctionExpression':
+      this.compileNode(expr)
+      return stack.pop()
 
       case 'AssignmentExpression':
       expr.right = this.walkExpression(expr.right)
-      return this.expressionStack.pop()
+      return stack.pop()
 
       case 'BinaryExpression':
       expr.left = this.walkExpression(expr.left)
       expr.right = this.walkExpression(expr.right)
-      return this.expressionStack.pop()
+      return stack.pop()
 
       case 'CallExpression':
       Object.defineProperty(
-        this.expressionStack[0],
-        'containsCallExpression',
+        stack[0],
+        'wrapInFunction',
         { value: true }
       )
       for (let i = 0; i < expr.arguments.length; i++) {
-        expr.elements[i] = this.walkExpression(expr.elements[i])
+        expr.arguments[i] = this.walkExpression(expr.arguments[i])
       }
       expr.callee = this.walkExpression(expr.callee)
-      return this.expressionStack.pop()
+      return stack.pop()
 
       case 'ConditionalExpression':
       expr.test = this.walkExpression(expr.test)
       expr.consequent = this.walkExpression(expr.consequent)
       expr.alternate = this.walkExpression(expr.alternate)
-      return this.expressionStack.pop()
+      return stack.pop()
 
       case 'Identifier':
       let id = this.findIdentifier(expr.name)
       if (id) {
         if (id.referenceType === 'param' && this.makeGettable) {
-          this.expressionStack.pop()
-          this.expressionStack.push(Interpreter.makeIdentifierGettable(expr))
+          stack.pop()
+          stack.push(Interpreter.makeIdentifierGettable(expr))
           Object.defineProperty(
-            this.expressionStack[0],
+            stack[0],
             'wrapInFunction',
             { value: true }
           )
         } else if (id.referenceType === 'component' ||
-                   id.referenceType === 'function') {
-          Object.defineProperty(
-            this.expressionStack[0],
-            'wrapInFunction',
-            { value: true }
-          )
+                   id.referenceType === 'function' ||
+                   id.referenceType === 'geometry') {
+          if (this.functionWrap) {
+            Object.defineProperty(
+              stack[0],
+              'wrapInFunction',
+              { value: true }
+            )
+          }
         }
-        return this.expressionStack.pop()
+        return stack.pop()
       }
-      return this.expressionStack.pop()
+      return stack.pop()
 
       case 'Literal':
-      return this.expressionStack.pop()
+      return stack.pop()
 
       case 'MemberExpression':
       expr.object = this.walkExpression(expr.object)
       expr.property = this.walkExpression(expr.property)
-      return this.expressionStack.pop()
+      return stack.pop()
 
       default:
-      return this.expressionStack.pop()
+      return stack.pop()
     }
   }
 

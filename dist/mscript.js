@@ -6005,6 +6005,7 @@ var node_1 = __webpack_require__(0);
 var entities_1 = __webpack_require__(4);
 
 var Interpreter = function () {
+    // expressionStack: Array<Node>
     function Interpreter(ast) {
         _classCallCheck(this, Interpreter);
 
@@ -6018,8 +6019,14 @@ var Interpreter = function () {
         /* Signals if an expression needs to be wrapped in an arrow function. */
         // this.isGettable = false
         this.makeGettable = true;
-        this.expressionStack = [];
-        this.stack = [{ identifiers: [], entity: new entities_1.ObjectEntity(), body: [this.result.body] }];
+        this.functionWrap = true;
+        // this.expressionStack = []
+        this.stack = [{
+            identifiers: [],
+            entity: new entities_1.ObjectEntity(),
+            body: [this.result.body],
+            expression: []
+        }];
     }
     // Compile kicks off the interpreter.  Iterate over each node in the input
     // body, compile it and add result to the output.
@@ -6039,6 +6046,9 @@ var Interpreter = function () {
         key: "compileNode",
         value: function compileNode(node) {
             switch (node.type) {
+                case 'ArrowFunctionExpression':
+                    this.arrowFunctionExpression(node);
+                    break;
                 case 'BlockStatement':
                     this.blockStatement(node);
                     break;
@@ -6072,6 +6082,7 @@ var Interpreter = function () {
         key: "accept",
         value: function accept(entity, node) {
             for (var i = this.stack.length; --i >= 0;) {
+                if (this.stack[i].entity === null) continue;
                 var acceptor = this.stack[i].entity.accept(entity, node);
                 if (acceptor) return acceptor;
             }
@@ -6084,6 +6095,22 @@ var Interpreter = function () {
                 var scope = this.top();
                 scope.body[scope.body.length - 1].push(node);
             }
+        }
+        /** Arrow functions are not appended as they are return by walkExpression()*/
+
+    }, {
+        key: "arrowFunctionExpression",
+        value: function arrowFunctionExpression(node) {
+            var block = node_1.default.blockStatement();
+            this.enterScope({
+                identifiers: [],
+                entity: null,
+                body: [block.body],
+                expression: []
+            });
+            this.compileNode(node.body);
+            this.closeScope();
+            node.body = block;
         }
         /**
         Iterate over nodes in a block.  Some nodes can be modified in place, others
@@ -6132,7 +6159,7 @@ var Interpreter = function () {
         value: function array(command) {
             var node = node_1.default.functionExpression(null, []);
             var entity = Interpreter.entity(command);
-            this.stack.push({ identifiers: [], entity: entity, body: [node.body.body] });
+            this.stack.push({ identifiers: [], entity: entity, body: [node.body.body], expression: [] });
             this.append(node_1.default.variableDeclaration('var', [node_1.default.variableDeclarator(node_1.default.identifier('arr'), node_1.default.arrayExpression())]));
             this.compileNode(command.body);
             this.append(node_1.default.returnStatement(node_1.default.identifier('arr')));
@@ -6142,7 +6169,9 @@ var Interpreter = function () {
     }, {
         key: "box",
         value: function box(command) {
-            this.append(node_1.default.variableDeclaration('var', [node_1.default.variableDeclarator(node_1.default.identifier(command.id.name), node_1.default.callExpression('box', [this.generateOptionsObject(command)]))]));
+            Object.defineProperty(command.id, 'referenceType', { value: 'geometry' });
+            this.pushId(command.id);
+            this.append(node_1.default.variableDeclaration('var', [node_1.default.variableDeclarator(command.id, node_1.default.callExpression('box', [this.generateOptionsObject(command)]))]));
         }
     }, {
         key: "component",
@@ -6159,7 +6188,7 @@ var Interpreter = function () {
             }
             if (command.body) {
                 var scope = node_1.default.functionExpression(null, []);
-                this.enterScope({ identifiers: [], entity: entity, body: [scope.body.body] });
+                this.enterScope({ identifiers: [], entity: entity, body: [scope.body.body], expression: [] });
                 this.compileNode(command.body);
                 this.closeScope();
                 this.append(node_1.default.expressionStatement(node_1.default.callExpression(scope)));
@@ -6195,12 +6224,30 @@ var Interpreter = function () {
             this.append(node);
         }
     }, {
+        key: "findIdentifier",
+        value: function findIdentifier(name) {
+            var result,
+                id,
+                _break = false;
+            for (var i = this.stack.length; --i >= 0 && !_break;) {
+                for (var j = this.stack[i].identifiers.length; --j >= 0;) {
+                    id = this.stack[i].identifiers[j];
+                    if (id.name === name) {
+                        result = id;
+                        _break = true;
+                        break;
+                    }
+                }
+            }
+            return result;
+        }
+    }, {
         key: "functionDeclaration",
         value: function functionDeclaration(node) {
             Object.defineProperty(node.id, 'referenceType', { value: 'function' });
             this.pushId(node.id);
             var block = node_1.default.blockStatement();
-            this.enterScope({ identifiers: [], entity: null, body: [block.body] });
+            this.enterScope({ identifiers: [], entity: null, body: [block.body], expression: [] });
             this.compileNode(node.body);
             this.closeScope();
             node.body = block;
@@ -6211,8 +6258,10 @@ var Interpreter = function () {
         value: function group(command, details) {
             var entity = Interpreter.entity(command);
             this.makeGettable = false;
+            this.functionWrap = false;
             var call = node_1.default.callExpression('group', [this.generateOptionsObject(command)]);
             this.makeGettable = true;
+            this.functionWrap = true;
             if (command.id) {
                 Object.defineProperty(command.id, 'referenceType', { value: 'group' });
                 this.pushId(command.id);
@@ -6223,7 +6272,7 @@ var Interpreter = function () {
             }
             if (command.body) {
                 var scope = node_1.default.functionExpression(null, []);
-                this.enterScope({ identifiers: [], entity: entity, body: [scope.body.body] });
+                this.enterScope({ identifiers: [], entity: entity, body: [scope.body.body], expression: [] });
                 this.compileNode(command.body);
                 this.closeScope();
                 this.append(node_1.default.expressionStatement(node_1.default.callExpression(scope)));
@@ -6308,21 +6357,6 @@ var Interpreter = function () {
             return node_1.default.objectExpression(properties);
         }
     }, {
-        key: "findIdentifier",
-        value: function findIdentifier(name) {
-            var result, id;
-            for (var i = this.stack.length; --i >= 0;) {
-                for (var j = this.stack[i].identifiers.length; --j >= 0;) {
-                    id = this.stack[i].identifiers[j];
-                    if (id.name === name) {
-                        result = id;
-                        break;
-                    }
-                }
-            }
-            return result;
-        }
-    }, {
         key: "enterScope",
         value: function enterScope(scope) {
             this.stack.push(scope);
@@ -6358,59 +6392,59 @@ var Interpreter = function () {
     }, {
         key: "walkExpression",
         value: function walkExpression(expr) {
-            this.expressionStack.push(expr);
+            var stack = this.top().expression;
+            stack.push(expr);
             switch (expr.type) {
                 case 'ArrayExpression':
                     for (var i = 0; i < expr.elements.length; i++) {
                         expr.elements[i] = this.walkExpression(expr.elements[i]);
                     }
-                    return this.expressionStack.pop();
-                // let elements: Array<Node> = []
-                // expr.elements.forEach((el: Node) => {
-                //   elements.push(this.walkExpression(el))
-                // })
-                //
-                // return Node.arrayExpression(elements)
+                    return stack.pop();
+                case 'ArrowFunctionExpression':
+                    this.compileNode(expr);
+                    return stack.pop();
                 case 'AssignmentExpression':
                     expr.right = this.walkExpression(expr.right);
-                    return this.expressionStack.pop();
+                    return stack.pop();
                 case 'BinaryExpression':
                     expr.left = this.walkExpression(expr.left);
                     expr.right = this.walkExpression(expr.right);
-                    return this.expressionStack.pop();
+                    return stack.pop();
                 case 'CallExpression':
-                    Object.defineProperty(this.expressionStack[0], 'containsCallExpression', { value: true });
+                    Object.defineProperty(stack[0], 'wrapInFunction', { value: true });
                     for (var _i = 0; _i < expr.arguments.length; _i++) {
-                        expr.elements[_i] = this.walkExpression(expr.elements[_i]);
+                        expr.arguments[_i] = this.walkExpression(expr.arguments[_i]);
                     }
                     expr.callee = this.walkExpression(expr.callee);
-                    return this.expressionStack.pop();
+                    return stack.pop();
                 case 'ConditionalExpression':
                     expr.test = this.walkExpression(expr.test);
                     expr.consequent = this.walkExpression(expr.consequent);
                     expr.alternate = this.walkExpression(expr.alternate);
-                    return this.expressionStack.pop();
+                    return stack.pop();
                 case 'Identifier':
                     var id = this.findIdentifier(expr.name);
                     if (id) {
                         if (id.referenceType === 'param' && this.makeGettable) {
-                            this.expressionStack.pop();
-                            this.expressionStack.push(Interpreter.makeIdentifierGettable(expr));
-                            Object.defineProperty(this.expressionStack[0], 'wrapInFunction', { value: true });
-                        } else if (id.referenceType === 'component' || id.referenceType === 'function') {
-                            Object.defineProperty(this.expressionStack[0], 'wrapInFunction', { value: true });
+                            stack.pop();
+                            stack.push(Interpreter.makeIdentifierGettable(expr));
+                            Object.defineProperty(stack[0], 'wrapInFunction', { value: true });
+                        } else if (id.referenceType === 'component' || id.referenceType === 'function' || id.referenceType === 'geometry') {
+                            if (this.functionWrap) {
+                                Object.defineProperty(stack[0], 'wrapInFunction', { value: true });
+                            }
                         }
-                        return this.expressionStack.pop();
+                        return stack.pop();
                     }
-                    return this.expressionStack.pop();
+                    return stack.pop();
                 case 'Literal':
-                    return this.expressionStack.pop();
+                    return stack.pop();
                 case 'MemberExpression':
                     expr.object = this.walkExpression(expr.object);
                     expr.property = this.walkExpression(expr.property);
-                    return this.expressionStack.pop();
+                    return stack.pop();
                 default:
-                    return this.expressionStack.pop();
+                    return stack.pop();
             }
         }
         /* Static methods */

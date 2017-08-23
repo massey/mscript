@@ -15,3 +15,5 @@ component back {
   B: base.B - base.thickness
   name: 'back'
 }
+
+width.split().forEach()
