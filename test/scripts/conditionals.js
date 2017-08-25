@@ -1,12 +1,14 @@
 var width = param({
   type: 'number',
-  value: 1000
+  value: 1000,
+  identifier: 'width'
 })
 object.add(width)
 
 var depth = param ({
   type: 'number',
-  value: 600
+  value: 600,
+  identifier: 'depth'
 })
 object.add(depth)
 

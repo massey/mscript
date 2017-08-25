@@ -1,7 +1,8 @@
 var width = param({
   type: 'number',
   value: 1000,
-  name: 'width'
+  name: 'width',
+  identifier: 'width'
 })
 object.add(width)
 

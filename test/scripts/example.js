@@ -4,38 +4,44 @@ var width = param({
   name: 'width',
   type: 'number',
   value: 600,
-  max: 1210
+  max: 1210,
+  identifier: 'width'
 });
 object.add(width);
 var depth = param({
   name: 'depth',
   type: 'number',
   value: 600,
-  max: 750
+  max: 750,
+  identifier: 'depth'
 });
 object.add(depth);
 var benchtopHeight = param({
   name: 'benchtopHeight',
   type: 'number',
-  value: 1000
+  value: 1000,
+  identifier: 'benchtopHeight'
 });
 object.add(benchtopHeight);
 var benchtopMaterial = param({
   name: 'benchtopMaterial',
   type: 'object',
-  source: $materials
+  source: $materials,
+  identifier: 'benchtopMaterial'
 })
 object.add(benchtopMaterial)
 var kickHeight = param({
   name: 'kickHeight',
   type: 'number',
-  value: 100
+  value: 100,
+  identifier: 'kickHeight'
 })
 object.add(kickHeight)
 var drawerHeights = param({
   name: 'drawerHeights',
   type: 'string',
-  value: '300 300'
+  value: '300 300',
+  identifier: 'drawerHeights'
 })
 object.add(drawerHeights);
 

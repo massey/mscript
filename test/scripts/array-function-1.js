@@ -1,7 +1,8 @@
 var number = param({
   type: 'number',
   value: 5,
-  name: 'number'
+  name: 'number',
+  identifier: 'number'
 });
 
 object.add(number);
@@ -9,7 +10,8 @@ object.add(number);
 var width = param({
   type: 'number',
   value: 500,
-  name: 'width'
+  name: 'width',
+  identifier: 'width'
 });
 
 object.add(width);

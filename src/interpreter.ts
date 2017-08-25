@@ -265,6 +265,40 @@ export default class Interpreter {
     this.append(node)
   }
 
+  /**
+  Generate an object expression from the labeled statements in a command body.
+  Shift the labeled statements from the front so the proper body is left behind.
+  */
+  generateOptionsObject (command: Node): Node {
+    var properties: Array<Node> = []
+    var current: Node = command.body.body[0].type === 'LabeledStatement'
+                        ? command.body.body.shift()
+                        : null
+
+    while (current) {
+      var key   = current.label
+      var value = this.walkExpression(current.body.expression)
+
+      if (value.wrapInFunction) {
+        value = Node.arrowFunctionExpression([], value)
+        // this.isGettable = false
+      }
+
+      properties.push(Node.property(key, value))
+
+      if (command.body.body.length) {
+        current = command.body.body[0].type === 'LabeledStatement'
+                  ? command.body.body.shift()
+                  : null
+      } else {
+        current = null
+        command.body = null
+      }
+    }
+
+    return Node.objectExpression(properties)
+  }
+
   group (command: Node, details: { id: string, options: Array<Node> }): void {
     var entity = Interpreter.entity(command)
     this.makeGettable = false
@@ -386,40 +420,6 @@ export default class Interpreter {
     this.append(node)
   }
 
-  /**
-  Generate an object expression from the labeled statements in a command body.
-  Shift the labeled statements from the front so the proper body is left behind.
-  */
-  generateOptionsObject (command: Node): Node {
-    var properties: Array<Node> = []
-    var current: Node = command.body.body[0].type === 'LabeledStatement'
-                        ? command.body.body.shift()
-                        : null
-
-    while (current) {
-      var key   = current.label
-      var value = this.walkExpression(current.body.expression)
-
-      if (value.wrapInFunction) {
-        value = Node.arrowFunctionExpression([], value)
-        // this.isGettable = false
-      }
-
-      properties.push(Node.property(key, value))
-
-      if (command.body.body.length) {
-        current = command.body.body[0].type === 'LabeledStatement'
-                  ? command.body.body.shift()
-                  : null
-      } else {
-        current = null
-        command.body = null
-      }
-    }
-
-    return Node.objectExpression(properties)
-  }
-
   enterScope (scope: scope) {
     this.stack.push(scope)
   }
@@ -430,25 +430,41 @@ export default class Interpreter {
 
   param
   (command: Node): void {
+    var options = this.generateOptionsObject(command)
 
-    this.append(
-      Node.variableDeclaration(
-        'var',
-        [Node.variableDeclarator(
-          command.id,
-          Node.callExpression(
-            'param',
-            [this.generateOptionsObject(command)]
-          )
-        )]
+    // Params also need to have their identifier included as one of their
+    // options.
+    if (command.id) {
+      options.properties.push(
+        Node.property(
+          Node.identifier('identifier'),
+          Node.literal(command.id.name)
+        )
       )
+    }
+
+    var call = Node.callExpression(
+      'param',
+      [options]
     )
 
-    Object.defineProperty(command.id, 'referenceType', { value: 'param' })
-    this.pushId(command.id)
-
     var entity = Interpreter.entity(command)
-    this.append(this.accept(entity))
+    if (command.id) {
+      Object.defineProperty(command.id, 'referenceType', { value: 'param' })
+      this.pushId(command.id)
+      this.append(
+        Node.variableDeclaration(
+          'var',
+          [Node.variableDeclarator(
+            command.id,
+            call
+          )]
+        )
+      )
+      this.append(this.accept(entity))
+    } else {
+      this.append(this.accept(entity, call))
+    }
   }
 
   /** Push an identifier onto the top identifier array*/

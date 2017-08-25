@@ -6244,6 +6244,33 @@ var Interpreter = function () {
             node.body = block;
             this.append(node);
         }
+        /**
+        Generate an object expression from the labeled statements in a command body.
+        Shift the labeled statements from the front so the proper body is left behind.
+        */
+
+    }, {
+        key: "generateOptionsObject",
+        value: function generateOptionsObject(command) {
+            var properties = [];
+            var current = command.body.body[0].type === 'LabeledStatement' ? command.body.body.shift() : null;
+            while (current) {
+                var key = current.label;
+                var value = this.walkExpression(current.body.expression);
+                if (value.wrapInFunction) {
+                    value = node_1.default.arrowFunctionExpression([], value);
+                    // this.isGettable = false
+                }
+                properties.push(node_1.default.property(key, value));
+                if (command.body.body.length) {
+                    current = command.body.body[0].type === 'LabeledStatement' ? command.body.body.shift() : null;
+                } else {
+                    current = null;
+                    command.body = null;
+                }
+            }
+            return node_1.default.objectExpression(properties);
+        }
     }, {
         key: "group",
         value: function group(command, details) {
@@ -6330,33 +6357,6 @@ var Interpreter = function () {
             });
             this.append(node);
         }
-        /**
-        Generate an object expression from the labeled statements in a command body.
-        Shift the labeled statements from the front so the proper body is left behind.
-        */
-
-    }, {
-        key: "generateOptionsObject",
-        value: function generateOptionsObject(command) {
-            var properties = [];
-            var current = command.body.body[0].type === 'LabeledStatement' ? command.body.body.shift() : null;
-            while (current) {
-                var key = current.label;
-                var value = this.walkExpression(current.body.expression);
-                if (value.wrapInFunction) {
-                    value = node_1.default.arrowFunctionExpression([], value);
-                    // this.isGettable = false
-                }
-                properties.push(node_1.default.property(key, value));
-                if (command.body.body.length) {
-                    current = command.body.body[0].type === 'LabeledStatement' ? command.body.body.shift() : null;
-                } else {
-                    current = null;
-                    command.body = null;
-                }
-            }
-            return node_1.default.objectExpression(properties);
-        }
     }, {
         key: "enterScope",
         value: function enterScope(scope) {
@@ -6370,11 +6370,22 @@ var Interpreter = function () {
     }, {
         key: "param",
         value: function param(command) {
-            this.append(node_1.default.variableDeclaration('var', [node_1.default.variableDeclarator(command.id, node_1.default.callExpression('param', [this.generateOptionsObject(command)]))]));
-            Object.defineProperty(command.id, 'referenceType', { value: 'param' });
-            this.pushId(command.id);
+            var options = this.generateOptionsObject(command);
+            // Params also need to have their identifier included as one of their
+            // options.
+            if (command.id) {
+                options.properties.push(node_1.default.property(node_1.default.identifier('identifier'), node_1.default.literal(command.id.name)));
+            }
+            var call = node_1.default.callExpression('param', [options]);
             var entity = Interpreter.entity(command);
-            this.append(this.accept(entity));
+            if (command.id) {
+                Object.defineProperty(command.id, 'referenceType', { value: 'param' });
+                this.pushId(command.id);
+                this.append(node_1.default.variableDeclaration('var', [node_1.default.variableDeclarator(command.id, call)]));
+                this.append(this.accept(entity));
+            } else {
+                this.append(this.accept(entity, call));
+            }
         }
         /** Push an identifier onto the top identifier array*/
 
@@ -6719,7 +6730,7 @@ var GroupEntity = function (_Entity4) {
         key: "accept",
         value: function accept(entity, node) {
             if (entity.type === 'component' || entity.type === 'param') {
-                return node_1.default.expressionStatement(node_1.default.callExpression(node_1.default.memberExpression(node_1.default.identifier(this.id), node_1.default.identifier('add')), [node_1.default.identifier(entity.id)]));
+                return node_1.default.expressionStatement(node_1.default.callExpression(node_1.default.memberExpression(node_1.default.identifier(this.id), node_1.default.identifier('add')), [node || node_1.default.identifier(entity.id)]));
             } else {
                 return null;
             }

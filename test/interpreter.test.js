@@ -105,10 +105,11 @@ describe('new interpreter with simple AST', () => {
   let oe = ce.arguments[0]
 
   test('ObjectExpression should have three properties', () => {
-    expect(oe.properties.length).toBe(3)
+    expect(oe.properties.length).toBe(4)
     expect(oe.properties[0].type).toBe('Property')
     expect(oe.properties[1].type).toBe('Property')
     expect(oe.properties[2].type).toBe('Property')
+    expect(oe.properties[3].type).toBe('Property')
   })
 
   test('first ObjectExpression property should have key \'type\' and be a string literal', () => {
@@ -197,22 +198,22 @@ describe('Interpreter', () => {
       astEquality('./scripts/nested-components.ms', './scripts/nested-components.js')
     })
 
-    // test('a script with a group', () => {
-    //   astEquality('./scripts/group.ms', './scripts/group.js')
-    // })
-
     test('a script with a group', () => {
-      let input    = fs.readFileSync(path.resolve(__dirname, './scripts/group.ms'), 'utf-8')
-      let ast      = mscriptAST(input)
-      let expected = fs.readFileSync(path.resolve(__dirname, './scripts/group.js'), 'utf-8')
-      let expAST   = parse(expected)
-
-      // console.log(inspect(ast, { depth: null, colors: true }))
-      console.log('int', esotope.generate(ast))
-      console.log(esotope.generate(expAST))
-
-      expect(helpers.stripLocations(ast)).toEqual(helpers.stripLocations(expAST))
+      astEquality('./scripts/group.ms', './scripts/group.js')
     })
+
+    // test('a script with a group', () => {
+    //   let input    = fs.readFileSync(path.resolve(__dirname, './scripts/group.ms'), 'utf-8')
+    //   let ast      = mscriptAST(input)
+    //   let expected = fs.readFileSync(path.resolve(__dirname, './scripts/group.js'), 'utf-8')
+    //   let expAST   = parse(expected)
+    //
+    //   // console.log(inspect(ast, { depth: null, colors: true }))
+    //   console.log('int', esotope.generate(ast))
+    //   console.log(esotope.generate(expAST))
+    //
+    //   expect(helpers.stripLocations(ast)).toEqual(helpers.stripLocations(expAST))
+    // })
 
     test('a script with a tag', () => {
       let input    = fs.readFileSync(path.resolve(__dirname, './scripts/tag.ms'), 'utf-8')

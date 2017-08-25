@@ -19,7 +19,7 @@ group all {
 group {
   name: 'test'
 
-  param testParam {
+  param {
     name: 'testParam'
     type: 'number'
     value: 1000

@@ -1,7 +1,8 @@
 var depth = param({
   type: 'number',
   value: 500,
-  name: 'depth'
+  name: 'depth',
+  identifier: 'depth'
 })
 
 object.add(depth)

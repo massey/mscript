@@ -142,7 +142,7 @@ class GroupEntity extends Entity {
             Node.identifier(this.id),
             Node.identifier('add')
           ),
-          [Node.identifier(entity.id)]
+          [node || Node.identifier(entity.id)]
         )
       )
     } else {

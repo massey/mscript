@@ -1,20 +1,23 @@
 var number = param({
   type: 'number',
-  value: 5
+  value: 5,
+  identifier: 'number'
 });
 
 object.add(number);
 
 var width = param({
   type: 'number',
-  value: 500
+  value: 500,
+  identifier: 'width'
 });
 
 object.add(width)
 
 var depth = param({
   type: 'number',
-  value: 200
+  value: 200,
+  identifier: 'depth'
 });
 
 object.add(depth);
