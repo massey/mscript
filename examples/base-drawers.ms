@@ -71,38 +71,13 @@ computed drawRunnerCode {
   }
 }
 
-component base {
-  A: width
-  B: depth
-  material: carcasMaterial
+translate {
+  y: 100
 
-  face 5 {
-    bore {
-      props: {
-        depth: 14
-      }
-
-      array {
-        var count = Math.floor((width - 120) / 400) + 1
-
-        for (var i = 0; i < count; i++) {
-          baseCabinetFeetDrilling {
-            x: 60
-            y: 36
-          }
-
-          baseCabinetFeetDrilling {
-            x: 60
-            y: depth - whatever
-          }
-
-          component {
-            product: baseCabinetFoot
-            quantity: 2
-          }
-        }
-      }
-    }
+  component base {
+    A: width
+    B: depth
+    material: carcasMaterial
   }
 }
 

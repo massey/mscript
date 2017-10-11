@@ -228,6 +228,10 @@ describe('Interpreter', () => {
       astEquality('./scripts/example.ms', './scripts/example.js')
     })
 
+    test('a script with transforms', () => {
+      astEquality('./scripts/transform.ms', './scripts/transform.js')
+    })
+
     // test('an example script', () => {
     //   let input    = fs.readFileSync(path.resolve(__dirname, './scripts/example.ms'), 'utf-8')
     //   let ast      = mscriptAST(input)
