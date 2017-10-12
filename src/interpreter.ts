@@ -15,12 +15,18 @@ interface scope {
   expression: Array<Node>
 }
 
+interface Transform {
+  rotate: Array<Node>,
+  translate: Array<Node>
+}
+
 export default class Interpreter {
   input: Node
   functionWrap: Boolean
   makeGettable: Boolean
   result: Node
   stack: Array<scope>
+  transformStack: Transform
 
   constructor (ast: Node) {
     this.result = Node.program()
@@ -33,6 +39,10 @@ export default class Interpreter {
       body: [this.result.body],
       expression: []
     }]
+    this.transformStack = {
+      rotate: [],
+      translate: []
+    }
   }
 
   // Compile kicks off the interpreter.  Iterate over each node in the input
@@ -115,6 +125,8 @@ export default class Interpreter {
       case 'group': this.group(command, details); break
       case 'meta': this.meta(command, details); break
       case 'param': this.param(command); break
+      case 'rotate': this.rotate(command); break
+      case 'translate': this.translate(command); break
 
       default:
       this.defaultCommand(command)
@@ -167,9 +179,17 @@ export default class Interpreter {
 
   component (command: Node): void {
     var entity = Interpreter.entity(command)
+
+    var options = this.generateOptionsObject(command)
+
+    // If there are transorms on the stack, include them here
+    if (this.transformStack.rotate.length || this.transformStack.translate.length) {
+      options.properties.push(Interpreter.makeTransformProperty(this.transformStack))
+    }
+
     var call = Node.callExpression(
       'component',
-      [this.generateOptionsObject(command)]
+      [options]
     )
 
     if (command.id) {
@@ -389,6 +409,13 @@ export default class Interpreter {
     }
   }
 
+  makeTransform (): Node {
+    return Node.objectExpression([
+      Node.property(Node.identifier('rotate'), Node.arrayExpression(this.transformStack.rotate.slice(0))),
+      Node.property(Node.identifier('translate'), Node.arrayExpression(this.transformStack.translate.slice(0)))
+    ])
+  }
+
   meta
   (command: Node, details: {id: string, options: Array<Node> }): void {
     details.options.forEach((option: any) => {
@@ -476,6 +503,22 @@ export default class Interpreter {
     return this.stack[this.stack.length - 1]
   }
 
+  rotate (command: Node): void {
+    var options = this.generateOptionsObject(command)
+
+    this.transformStack.rotate.push(options)
+    this.compileNode(command.body)
+    this.transformStack.rotate.pop()
+  }
+
+  translate (command: Node): void {
+    var options = this.generateOptionsObject(command)
+
+    this.transformStack.translate.push(options)
+    this.compileNode(command.body)
+    this.transformStack.translate.pop()
+  }
+
   /* Walk an expression and make identifiers that reference params gettable. */
   walkExpression (expr: Node): Node {
     var stack = this.top().expression
@@ -553,6 +596,10 @@ export default class Interpreter {
       expr.property = this.walkExpression(expr.property)
       return stack.pop()
 
+      case 'UnaryExpression':
+      expr.argument = this.walkExpression(expr.argument)
+      return stack.pop()
+
       default:
       return stack.pop()
     }
@@ -621,6 +668,30 @@ export default class Interpreter {
     let node: Node = Node.callExpression(me)
 
     return node
+  }
+
+  static makeTransformProperty (transform: Transform): Node {
+    var object = Node.objectExpression([])
+
+    if (transform.rotate.length) {
+      object.properties.push(
+        Node.property(
+          Node.identifier('rotate'),
+          Node.arrayExpression(transform.rotate.slice(0))
+        )
+      )
+    }
+
+    if (transform.translate.length) {
+      object.properties.push(
+        Node.property(
+          Node.identifier('translate'),
+          Node.arrayExpression(transform.translate.slice(0))
+        )
+      )
+    }
+
+    return Node.property(Node.identifier('transform'), object)
   }
 
   /**

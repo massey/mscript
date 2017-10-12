@@ -6018,6 +6018,10 @@ var Interpreter = function () {
             body: [this.result.body],
             expression: []
         }];
+        this.transformStack = {
+            rotate: [],
+            translate: []
+        };
     }
     // Compile kicks off the interpreter.  Iterate over each node in the input
     // body, compile it and add result to the output.
@@ -6140,6 +6144,12 @@ var Interpreter = function () {
                 case 'param':
                     this.param(command);
                     break;
+                case 'rotate':
+                    this.rotate(command);
+                    break;
+                case 'translate':
+                    this.translate(command);
+                    break;
                 default:
                     this.defaultCommand(command);
             }
@@ -6167,7 +6177,12 @@ var Interpreter = function () {
         key: "component",
         value: function component(command) {
             var entity = Interpreter.entity(command);
-            var call = node_1.default.callExpression('component', [this.generateOptionsObject(command)]);
+            var options = this.generateOptionsObject(command);
+            // If there are transorms on the stack, include them here
+            if (this.transformStack.rotate.length || this.transformStack.translate.length) {
+                options.properties.push(Interpreter.makeTransformProperty(this.transformStack));
+            }
+            var call = node_1.default.callExpression('component', [options]);
             if (command.id) {
                 Object.defineProperty(command.id, 'referenceType', { value: 'component' });
                 this.pushId(command.id);
@@ -6333,6 +6348,11 @@ var Interpreter = function () {
             }
         }
     }, {
+        key: "makeTransform",
+        value: function makeTransform() {
+            return node_1.default.objectExpression([node_1.default.property(node_1.default.identifier('rotate'), node_1.default.arrayExpression(this.transformStack.rotate.slice(0))), node_1.default.property(node_1.default.identifier('translate'), node_1.default.arrayExpression(this.transformStack.translate.slice(0)))]);
+        }
+    }, {
         key: "meta",
         value: function meta(command, details) {
             var _this3 = this;
@@ -6399,6 +6419,22 @@ var Interpreter = function () {
         value: function top() {
             return this.stack[this.stack.length - 1];
         }
+    }, {
+        key: "rotate",
+        value: function rotate(command) {
+            var options = this.generateOptionsObject(command);
+            this.transformStack.rotate.push(options);
+            this.compileNode(command.body);
+            this.transformStack.rotate.pop();
+        }
+    }, {
+        key: "translate",
+        value: function translate(command) {
+            var options = this.generateOptionsObject(command);
+            this.transformStack.translate.push(options);
+            this.compileNode(command.body);
+            this.transformStack.translate.pop();
+        }
         /* Walk an expression and make identifiers that reference params gettable. */
 
     }, {
@@ -6454,6 +6490,9 @@ var Interpreter = function () {
                 case 'MemberExpression':
                     expr.object = this.walkExpression(expr.object);
                     expr.property = this.walkExpression(expr.property);
+                    return stack.pop();
+                case 'UnaryExpression':
+                    expr.argument = this.walkExpression(expr.argument);
                     return stack.pop();
                 default:
                     return stack.pop();
@@ -6517,6 +6556,18 @@ var Interpreter = function () {
             var me = node_1.default.memberExpression(obj, prop);
             var node = node_1.default.callExpression(me);
             return node;
+        }
+    }, {
+        key: "makeTransformProperty",
+        value: function makeTransformProperty(transform) {
+            var object = node_1.default.objectExpression([]);
+            if (transform.rotate.length) {
+                object.properties.push(node_1.default.property(node_1.default.identifier('rotate'), node_1.default.arrayExpression(transform.rotate.slice(0))));
+            }
+            if (transform.translate.length) {
+                object.properties.push(node_1.default.property(node_1.default.identifier('translate'), node_1.default.arrayExpression(transform.translate.slice(0))));
+            }
+            return node_1.default.property(node_1.default.identifier('transform'), object);
         }
         /**
          * Make an option's value equal to the saved parameter's value.

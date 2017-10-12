@@ -36,7 +36,7 @@ rotate {
     component back {
       A: width + 100
       B: height - 100
-      name: 'base'
+      name: 'back'
     }
   }
 }
