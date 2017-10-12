@@ -26,17 +26,23 @@ translate {
   }
 }
 
+
+
 rotate {
   x: 90
 
-  translate {
-    y: 100 + base.thickness
-    z: -depth
+  rotate {
+    y: -90
 
-    component back {
-      A: width + 100
-      B: height - 100
-      name: 'back'
+    translate {
+      y: 100 + base.thickness
+      z: -depth
+
+      component back {
+        A: width + 100
+        B: height - 100
+        name: 'back'
+      }
     }
   }
 }

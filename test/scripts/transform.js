@@ -37,7 +37,7 @@ var back = component({
   B: () => height.get() - 100,
   name: 'back',
   transform: {
-    rotate: [{ x: 90 }],
+    rotate: [{ x: 90 }, { y: -90 }],
     translate: [{ y: () => 100 + base.thickness, z: () => -depth.get() }]
   }
 })
