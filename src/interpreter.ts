@@ -232,20 +232,20 @@ export default class Interpreter {
   Command Statement
   */
   defaultCommand (command: Node): void {
-    var call = Node.callExpression(
-      Node.memberExpression(
-        Node.identifier('object'),
-        Node.identifier(command.name.name)
-      ),
-      [this.generateOptionsObject(command)]
-    )
+    // var call = Node.callExpression(
+    //   Node.identifier(command.name.name),
+    //   [this.generateOptionsObject(command)]
+    // )
 
     this.append(
       Node.variableDeclaration(
         'var',
         [Node.variableDeclarator(
           Node.identifier(command.id || '_' + this.counter++),
-          call
+          Node.callExpression(
+            Node.identifier(command.name.name),
+            [this.generateOptionsObject(command)]
+          )
         )]
       )
     )

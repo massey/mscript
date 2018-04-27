@@ -6207,8 +6207,11 @@ var Interpreter = function () {
     }, {
         key: "defaultCommand",
         value: function defaultCommand(command) {
-            var call = node_1.default.callExpression(node_1.default.memberExpression(node_1.default.identifier('object'), node_1.default.identifier(command.name.name)), [this.generateOptionsObject(command)]);
-            this.append(node_1.default.variableDeclaration('var', [node_1.default.variableDeclarator(node_1.default.identifier(command.id || '_' + this.counter++), call)]));
+            // var call = Node.callExpression(
+            //   Node.identifier(command.name.name),
+            //   [this.generateOptionsObject(command)]
+            // )
+            this.append(node_1.default.variableDeclaration('var', [node_1.default.variableDeclarator(node_1.default.identifier(command.id || '_' + this.counter++), node_1.default.callExpression(node_1.default.identifier(command.name.name), [this.generateOptionsObject(command)]))]));
         }
     }, {
         key: "expressionStatement",
