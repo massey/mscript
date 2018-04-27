@@ -21,6 +21,7 @@ interface Transform {
 }
 
 export default class Interpreter {
+  counter: number
   input: Node
   functionWrap: Boolean
   makeGettable: Boolean
@@ -29,6 +30,7 @@ export default class Interpreter {
   transformStack: Transform
 
   constructor (ast: Node) {
+    this.counter = 0
     this.result = Node.program()
     this.input    = ast
     this.makeGettable = true
@@ -226,18 +228,27 @@ export default class Interpreter {
     }
   }
 
+  /**
+  Command Statement
+  */
   defaultCommand (command: Node): void {
-    var tagged = new Node()
-    tagged.tag = command.name.name
-    if (command.id) tagged.id = command.id.name
-    var options = this.generateOptionsObject(command)
+    var call = Node.callExpression(
+      Node.memberExpression(
+        Node.identifier('object'),
+        Node.identifier(command.name.name)
+      ),
+      [this.generateOptionsObject(command)]
+    )
 
-    for (let i = 0; i < options.properties.length; i++) {
-      var currentProperty = options.properties[i]
-      tagged[currentProperty.key.name] = currentProperty.value.value
-    }
-
-    this.append(tagged)
+    this.append(
+      Node.variableDeclaration(
+        'var',
+        [Node.variableDeclarator(
+          Node.identifier(command.id || '_' + this.counter++),
+          call
+        )]
+      )
+    )
   }
 
   expressionStatement (node: Node) {

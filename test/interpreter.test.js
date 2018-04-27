@@ -6,6 +6,7 @@ const Node        = require('../dist/node.js').default
 const parse       = require('acorn').parse
 const helpers     = require('./helpers.js')
 const esotope = require('esotope')
+const compile = require('../dist/mscript.js').compile
 
 /* Here we instantiate a new Interpreter and check it's initial state, run a
  * few methods to see how the state changes. */
@@ -215,14 +216,15 @@ describe('Interpreter', () => {
     //   expect(helpers.stripLocations(ast)).toEqual(helpers.stripLocations(expAST))
     // })
 
-    test('a script with a tag', () => {
-      let input    = fs.readFileSync(path.resolve(__dirname, './scripts/tag.ms'), 'utf-8')
-      let ast      = mscriptAST(input)
-      let expAST   = Node.program()
-      expAST.body.push({ tag: 'product', code: 'test', id: 'carcas' })
-
-      expect(helpers.stripLocations(ast)).toEqual(helpers.stripLocations(expAST))
-    })
+    // tags are getting deprecated
+    // test('a script with a tag', () => {
+    //   let input    = fs.readFileSync(path.resolve(__dirname, './scripts/tag.ms'), 'utf-8')
+    //   let ast      = mscriptAST(input)
+    //   let expAST   = Node.program()
+    //   expAST.body.push({ tag: 'product', code: 'test', id: 'carcas' })
+    //
+    //   expect(helpers.stripLocations(ast)).toEqual(helpers.stripLocations(expAST))
+    // })
 
     test('an example script', () => {
       astEquality('./scripts/example.ms', './scripts/example.js')
@@ -239,10 +241,15 @@ describe('Interpreter', () => {
       let expAST   = parse(expected)
 
       // console.log(inspect(ast, { depth: null, colors: true }))
-      console.log(esotope.generate(ast))
+      // console.log(esotope.generate(ast))
       // console.log(esotope.generate(expAST))
 
       // expect(helpers.stripLocations(ast)).toEqual(helpers.stripLocations(expAST))
+    })
+
+    test('a script with a default command', () => {
+      astEquality('./scripts/default.ms', './scripts/default.js')
+      console.log(compile(fs.readFileSync(path.resolve(__dirname, './scripts/default.ms'), 'utf-8')))
     })
   })
 })

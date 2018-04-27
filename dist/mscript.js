@@ -6008,6 +6008,7 @@ var Interpreter = function () {
     function Interpreter(ast) {
         _classCallCheck(this, Interpreter);
 
+        this.counter = 0;
         this.result = node_1.default.program();
         this.input = ast;
         this.makeGettable = true;
@@ -6199,18 +6200,15 @@ var Interpreter = function () {
                 this.append(node_1.default.expressionStatement(node_1.default.callExpression(scope)));
             }
         }
+        /**
+        Command Statement
+        */
+
     }, {
         key: "defaultCommand",
         value: function defaultCommand(command) {
-            var tagged = new node_1.default();
-            tagged.tag = command.name.name;
-            if (command.id) tagged.id = command.id.name;
-            var options = this.generateOptionsObject(command);
-            for (var i = 0; i < options.properties.length; i++) {
-                var currentProperty = options.properties[i];
-                tagged[currentProperty.key.name] = currentProperty.value.value;
-            }
-            this.append(tagged);
+            var call = node_1.default.callExpression(node_1.default.memberExpression(node_1.default.identifier('object'), node_1.default.identifier(command.name.name)), [this.generateOptionsObject(command)]);
+            this.append(node_1.default.variableDeclaration('var', [node_1.default.variableDeclarator(node_1.default.identifier(command.id || '_' + this.counter++), call)]));
         }
     }, {
         key: "expressionStatement",
@@ -6907,9 +6905,12 @@ function parse(input) {
     return acorn.parse(input);
 }
 exports.parse = parse;
-function compile(ast) {
+function compile(input) {
+    var ast = acorn.parse(input);
     var i = new interpreter_1.default(ast);
-    return i.compile();
+    return esotope.generate(i.compile(), {
+        semicolons: false
+    });
 }
 exports.compile = compile;
 // To be deprecated in favour of compile

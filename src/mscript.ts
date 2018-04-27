@@ -16,9 +16,13 @@ export function parse (input: string): Node {
   return acorn.parse(input) as Node
 }
 
-export function compile (ast: Node): Node {
+export function compile (input: string): string {
+  let ast = acorn.parse(input) as Node
   let i = new Interpreter(ast)
-  return i.compile()
+
+  return esotope.generate(i.compile(), {
+    semicolons: false
+  })
 }
 
 // To be deprecated in favour of compile
